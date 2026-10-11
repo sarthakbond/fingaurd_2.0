@@ -1,0 +1,86 @@
+# FinGuard 2.0 Configuration
+# Aligned with Problem Statement #7: AI-Based Investor Fraud & Impersonation Detection
+
+server:
+  host: "127.0.0.1"
+  port: 8000
+  cors_origins: ["*"]
+  max_upload_mb: 100
+
+hardware:
+  preferred_device: "cuda"  # Auto-falls back to cpu if cuda unavailable
+  force_cpu: false
+
+# Thresholds for Multi-Factor Detection & Verification
+thresholds:
+  # Requirement 1: Deepfake Video & Audio
+  vision_fake_threshold: 0.50
+  audio_fake_threshold: 0.50
+  audio_segment_flag_threshold: 0.45
+  impersonation_audio_threshold: 0.45
+  
+  # Requirement 2: Impersonation & Advisory Messages
+  advisory_risk_threshold: 0.60
+  urgency_threshold: 0.50
+  guarantee_threshold: 0.70
+  registry_match_threshold: 75.0  # Percentage similarity required for fuzzy match
+  
+  # Requirement 3: Fake Trading Applications & Domains
+  domain_max_levenshtein_distance: 3
+  apk_risk_permission_count_threshold: 2
+  
+  # Calibrated Verdict Levels
+  verdict_critical_threshold: 0.70
+  verdict_suspicious_threshold: 0.40
+
+# Public Academic Benchmarks for Deepfake Detection (as cited in Problem Statement #7)
+benchmarks:
+  faceforensics_pp:
+    name: "FaceForensics++"
+    source_url: "https://github.com/ondyari/FaceForensics"
+    methods: ["Deepfakes", "Face2Face", "FaceSwap", "NeuralTextures"]
+    compressions: ["c23 (HQ)", "c40 (LQ)"]
+    primary_metric: "AUC-ROC / Binary Classification Accuracy"
+    status: "Candidate evaluation benchmark"
+  dfdc:
+    name: "Deepfake Detection Challenge (DFDC)"
+    source_url: "https://ai.meta.com/datasets/dfdc/"
+    paper_arxiv: "https://arxiv.org/abs/2006.07397"
+    primary_metric: "Log Loss / Frame-level EER"
+    status: "Candidate evaluation benchmark"
+
+# Modular Detection Engine Configurations
+engines:
+  deepfake_engine:
+    enabled: true
+    mode: "baseline_foundation"  # Options: baseline_foundation, neural_evaluated
+    video_sample_fps: 2.0
+    audio_sample_rate: 16000
+    candidate_backbones:
+      - "efficientnet_b4"
+      - "xception"
+      - "wav2vec2_audio"
+
+  impersonation_engine:
+    enabled: true
+    mode: "rule_and_regex_foundation"  # Options: rule_and_regex_foundation, nlp_classifier
+    registry_path: "data/sebi_registry.json"
+    dpdp_redaction_enabled: true
+    hinglish_detection_enabled: true
+
+  trading_app_engine:
+    enabled: true
+    mode: "static_inspection_foundation"
+    whitelist_path: "data/broker_whitelist.json"
+    high_risk_permissions:
+      - "android.permission.READ_SMS"
+      - "android.permission.RECEIVE_SMS"
+      - "android.permission.BIND_ACCESSIBILITY_SERVICE"
+      - "android.permission.PACKAGE_USAGE_STATS"
+      - "android.permission.READ_CONTACTS"
+      - "android.permission.SYSTEM_ALERT_WINDOW"
+
+  alert_engine:
+    enabled: true
+    max_recent_alerts: 100
+    enable_scores_dossier_generation: true

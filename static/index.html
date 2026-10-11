@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinGuard 2.0 — Real-Time Investor Fraud & Impersonation Detection</title>
+  <meta name="description" content="AI-Based Investor Fraud & Impersonation Detection aligned with SEBI's investor-protection mandate. Detects financial deepfakes, advisory messaging fraud, and fake trading apps.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon">🛡️</div>
+      <div class="brand-text">
+        <h1>FinGuard 2.0</h1>
+        <p>SEBI Investor-Protection System • Problem Statement #7</p>
+      </div>
+    </div>
+
+    <div class="system-status-pills">
+      <div class="pill">
+        <span class="pill-dot" id="header-status-dot"></span>
+        <span id="header-status-text">Phase 1: Foundation Active</span>
+      </div>
+      <div class="pill" style="color: var(--accent-cyan);">
+        <span>📊 Benchmarks: FF++ / DFDC</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="container">
+    
+    <!-- Tab Navigation -->
+    <nav class="tabs-nav" aria-label="Detection Vectors Navigation">
+      <button class="tab-btn active" data-target="pane-overview" id="tab-nav-overview">
+        <span>🌐</span> Overview & Alert Feed
+      </button>
+      <button class="tab-btn" data-target="pane-media" id="tab-nav-media">
+        <span>🎥</span> Vector 1: Deepfake Media
+      </button>
+      <button class="tab-btn" data-target="pane-messages" id="tab-nav-messages">
+        <span>💬</span> Vector 2: Impersonation & Chat
+      </button>
+      <button class="tab-btn" data-target="pane-infrastructure" id="tab-nav-infrastructure">
+        <span>📱</span> Vector 3: Apps & Domains
+      </button>
+      <button class="tab-btn" data-target="pane-dossier" id="tab-nav-dossier">
+        <span>⚖️</span> SEBI SCORES Dossier
+      </button>
+    </nav>
+
+    <!-- Tab 1: System Overview & Live Telemetry -->
+    <section class="tab-pane active" id="pane-overview">
+      <div class="grid-2">
+        <!-- System Topology Card -->
+        <div class="card">
+          <h2 class="card-title"><span>🛡️</span> Architecture & Scope Alignment</h2>
+          <p class="card-desc">FinGuard 2.0 addresses Problem Statement #7 across three core vectors aligned with SEBI's investor-protection mandate:</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+            <div style="padding: 1rem; background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--accent-cyan); border-radius: 4px;">
+              <strong style="color: var(--accent-cyan);">Requirement 1: Deepfake Video & Audio</strong>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                Visual & acoustic forensic pipeline with timeline risk scrubbing. Benchmarked on standard academic datasets (<strong>FaceForensics++</strong> and <strong>DFDC</strong>).
+              </p>
+            </div>
+
+            <div style="padding: 1rem; background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--accent-amber); border-radius: 4px;">
+              <strong style="color: var(--accent-amber);">Requirement 2: Impersonation & Advisory Messages</strong>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                WhatsApp & Telegram advisory classifier, DPDP Act 2023 PII redactor, Hinglish slang detection, and official SEBI Registered Intermediary roster verification.
+              </p>
+            </div>
+
+            <div style="padding: 1rem; background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--accent-rose); border-radius: 4px;">
+              <strong style="color: var(--accent-rose);">Requirement 3: Fake Trading Apps & Phishing Domains</strong>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                Static APK binary inspector (detects 2FA SMS interception & accessibility hijacking) and broker typo-squatting domain analyzer.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Alert Stream Card -->
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h2 class="card-title"><span>🚨</span> Real-Time Alert Feed</h2>
+            <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" id="refresh-alerts-btn">
+              🔄 Refresh
+            </button>
+          </div>
+          <p class="card-desc">Live synthesized event feed across all ingestion channels.</p>
+          <div class="alerts-list" id="alerts-feed-container">
+            <!-- Dynamic alerts populate here -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Vector 1 - Deepfake Media Forensics -->
+    <section class="tab-pane" id="pane-media">
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="card-title"><span>🎥</span> Media Forensics Scanner</h2>
+          <p class="card-desc">Inspect financial adviser videos, webinars, and audio broadcasts for facial synthesis and voice cloning.</p>
+          
+          <div class="presets-bar">
+            <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center;">Test Presets:</span>
+            <button class="preset-chip media-preset" data-preset="deepfake_video">Synthesized Executive Clip</button>
+            <button class="preset-chip media-preset" data-preset="authentic_video">Verified Authentic Broadcast</button>
+          </div>
+
+          <div class="drop-zone" id="media-drop-zone">
+            <div class="drop-zone-icon">📁</div>
+            <div class="drop-zone-text">Drag & drop video / audio file here</div>
+            <div class="drop-zone-subtext">Supports MP4, WAV, MP3, MOV (Max 100MB)</div>
+            <input type="file" id="media-file-input" style="display: none;" accept="video/*,audio/*">
+          </div>
+
+          <div style="text-align: center; margin: 1rem 0; color: var(--text-muted); font-size: 0.8rem;">— OR ENTER PUBLIC URL —</div>
+
+          <div class="form-group">
+            <label class="form-label" for="media-url-input">Media Stream / Video URL</label>
+            <input type="text" class="form-input" id="media-url-input" placeholder="https://example.com/adviser_video.mp4">
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%;" id="media-scan-btn">
+            🔍 Execute Deepfake Inspection
+          </button>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title"><span>📊</span> Forensic Evaluation & Timeline</h2>
+          <p class="card-desc">Continuous segment-by-segment timeline scrubber and benchmark metrics.</p>
+
+          <div id="media-result-card" style="display: none;">
+            <div class="verdict-header">
+              <span>Overall Verdict:</span>
+              <span id="media-verdict-badge" class="verdict-badge">PENDING</span>
+            </div>
+
+            <!-- Visual Score Meter -->
+            <div class="meter-row">
+              <span>Visual Artifacts Score (Face Swapping / Blending)</span>
+              <strong id="media-visual-score">0%</strong>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" id="media-visual-bar" style="width: 0%;"></div>
+            </div>
+
+            <!-- Acoustic Score Meter -->
+            <div class="meter-row">
+              <span>Acoustic Synthesis Score (Voice Cloning / Vocoder Jitter)</span>
+              <strong id="media-acoustic-score">0%</strong>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" id="media-acoustic-bar" style="width: 0%;"></div>
+            </div>
+
+            <div style="margin-top: 1.25rem;">
+              <span class="form-label">Interactive Timeline Risk Scrubber</span>
+              <div class="timeline-scrubber" id="media-timeline-scrubber"></div>
+              <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem;">Hover over segments to inspect second-by-second manipulation probability.</p>
+            </div>
+
+            <div style="margin-top: 1.25rem;">
+              <span class="form-label">Forensic Observations</span>
+              <ul id="media-indicators-list" style="font-size: 0.82rem; padding-left: 1.2rem; color: var(--text-secondary);"></ul>
+            </div>
+
+            <div style="margin-top: 1.25rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.02); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+              <span class="form-label" style="color: var(--accent-cyan);">Benchmark Evaluation Standards</span>
+              <div id="media-benchmarks-list" style="font-size: 0.75rem; color: var(--text-muted);"></div>
+            </div>
+          </div>
+
+          <div id="media-placeholder" style="padding: 3rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+            Run a scan or drop a file to view detailed forensic metrics and timeline scrubber.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Vector 2 - Impersonation & Advisory Messages -->
+    <section class="tab-pane" id="pane-messages">
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="card-title"><span>💬</span> WhatsApp & Telegram Advisory Scanner</h2>
+          <p class="card-desc">Detect illegal advice, guaranteed returns, urgency tactics, and fraudulent license claims.</p>
+
+          <div class="presets-bar">
+            <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center;">Test Presets:</span>
+            <button class="preset-chip msg-preset" data-preset="pump_scam">Pump & Dump Guaranteed Call</button>
+            <button class="preset-chip msg-preset" data-preset="stolen_reg">Stolen Broker Registration</button>
+            <button class="preset-chip msg-preset" data-preset="clean_disclaimer">Compliant SEBI Disclaimer</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="msg-platform-select">Platform Channel</label>
+            <select class="form-select" id="msg-platform-select">
+              <option value="whatsapp">WhatsApp Group / Broadcast</option>
+              <option value="telegram">Telegram VIP Channel</option>
+              <option value="sms">SMS / Direct Message</option>
+              <option value="instagram">Instagram / Social Post</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="msg-text-input">Message / Chat Transcript</label>
+            <textarea class="form-textarea" id="msg-text-input" placeholder="Paste incoming advisory message text here..."></textarea>
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%;" id="msg-scan-btn">
+            🔍 Audit Advisory Message
+          </button>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title"><span>🔍</span> Compliance & Identity Audit</h2>
+          <p class="card-desc">DPDP Act redaction, SEBI registry match, and statutory violation check.</p>
+
+          <div id="msg-result-card" style="display: none;">
+            <div class="verdict-header">
+              <span>Advisory Risk:</span>
+              <span id="msg-verdict-badge" class="verdict-badge">PENDING</span>
+            </div>
+
+            <div class="meter-row">
+              <span>Composite Advisory Risk Score</span>
+              <strong id="msg-risk-score">0%</strong>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" id="msg-risk-bar" style="width: 0%;"></div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+              <span id="msg-reg-status-badge" class="pill">SEBI Status: PENDING</span>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+              <span class="form-label">DPDP Act 2023 Shield (Sanitized Content)</span>
+              <div id="msg-sanitized-text" style="font-size: 0.82rem; background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); color: var(--text-primary); font-family: var(--font-mono);"></div>
+              <div id="msg-pii-redacted" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;"></div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+              <span class="form-label">Detected Colloquialisms & Fraud Cues</span>
+              <div id="msg-hinglish-tags" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+            </div>
+
+            <div>
+              <span class="form-label">Statutory Provisions Violated</span>
+              <ul id="msg-violations-list" style="font-size: 0.82rem; padding-left: 1.2rem; color: var(--accent-rose);"></ul>
+            </div>
+          </div>
+
+          <div id="msg-placeholder" style="padding: 3rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+            Enter or paste a message on the left to audit regulatory compliance.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Vector 3 - Apps & Phishing Infrastructure -->
+    <section class="tab-pane" id="pane-infrastructure">
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="card-title"><span>📱</span> Fake Trading App & Domain Inspector</h2>
+          <p class="card-desc">Analyze broker typo-squatting phishing domains and inspect Android APK permissions.</p>
+
+          <div class="presets-bar">
+            <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center;">Test Presets:</span>
+            <button class="preset-chip app-preset" data-preset="fake_groww">Phishing Groww Reward (.xyz)</button>
+            <button class="preset-chip app-preset" data-preset="fake_zerodha">Fake Zerodha Terminal (.top)</button>
+            <button class="preset-chip app-preset" data-preset="genuine_zerodha">Official Whitelisted Broker</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="app-domain-input">Suspicious Domain / Phishing URL</label>
+            <input type="text" class="form-input" id="app-domain-input" placeholder="e.g. groww-bonus-reward.xyz">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="app-pkg-input">Android Package Name (APK)</label>
+            <input type="text" class="form-input" id="app-pkg-input" placeholder="e.g. com.groww.vip.trade">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="app-perms-input">Declared Permissions (Comma-separated)</label>
+            <input type="text" class="form-input" id="app-perms-input" placeholder="e.g. READ_SMS, RECEIVE_SMS, BIND_ACCESSIBILITY_SERVICE">
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%;" id="app-scan-btn">
+            🔍 Audit Infrastructure & Binary
+          </button>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title"><span>🛡️</span> Infrastructure Threat Verdict</h2>
+          <p class="card-desc">Typo-squatting Levenshtein distance, high-risk permissions, and whitelist validation.</p>
+
+          <div id="app-result-card" style="display: none;">
+            <div class="verdict-header">
+              <span>Infrastructure Threat:</span>
+              <span id="app-verdict-badge" class="verdict-badge">PENDING</span>
+            </div>
+
+            <div class="meter-row">
+              <span>Threat Probability Score</span>
+              <strong id="app-risk-score">0%</strong>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" id="app-risk-bar" style="width: 0%;"></div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+              <span id="app-whitelist-badge" class="pill">Status: UNLISTED</span>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+              <span class="form-label">Domain Forensics</span>
+              <div id="app-domain-details" style="font-size: 0.82rem; background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></div>
+            </div>
+
+            <div>
+              <span class="form-label">Surveillance / High-Risk Permissions</span>
+              <ul id="app-perms-list" style="font-size: 0.82rem; padding-left: 1.2rem;"></ul>
+            </div>
+          </div>
+
+          <div id="app-placeholder" style="padding: 3rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+            Submit a domain or APK permissions to evaluate against official broker registries.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: SEBI SCORES Complaint Dossier -->
+    <section class="tab-pane" id="pane-dossier">
+      <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+          <div>
+            <h2 class="card-title"><span>⚖️</span> Pre-Formatted SEBI SCORES Complaint Dossier</h2>
+            <p class="card-desc">Automatically compiles forensic findings and statutory violations into an evidence dossier ready for submission to the SEBI SCORES portal.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary" id="dossier-generate-btn">
+              ⚡ Compile Evidentiary Dossier
+            </button>
+            <button class="btn btn-secondary" id="dossier-copy-btn" style="display: none;">
+              📋 Copy Dossier Text
+            </button>
+          </div>
+        </div>
+
+        <pre class="dossier-box" id="dossier-text-view">Click "Compile Evidentiary Dossier" to generate a legal complaint report citing SEBI Act 1992, SEBI IA Regulations 2013, and SEBI PFUTP Regulations 2003.</pre>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
