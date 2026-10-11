@@ -13,7 +13,7 @@
 ### Codebase Inventory (Excluding `.venv` and Git metadata)
 - **Core backend modules**: 7 files (`__init__.py`, `config.py`, `database.py`, `logging.py`, `rate_limit.py`, `security.py`, `upload.py`)
 - **Data models & schemas**: 6 files (`__init__.py`, `db.py`, `media.py`, `advisory.py`, `infrastructure.py`, `verdict.py`)
-- **Forensic services**: 8 files (`__init__.py`, `base.py`, `audio_deepfake_detector.py`, `audio_preprocessor.py`, `deepfake_engine.py`, `impersonation_engine.py`, `infrastructure_engine.py`, `alert_engine.py`)
+- **Forensic services**: 9 files (`__init__.py`, `base.py`, `audio_deepfake_detector.py`, `audio_preprocessor.py`, `audio_transcriber.py`, `deepfake_engine.py`, `impersonation_engine.py`, `infrastructure_engine.py`, `alert_engine.py`)
 - **API routes**: 2 files (`__init__.py`, `app.py`)
 - **Static assets**: 3 files (`index.html`, `styles.css`, `app.js`)
 - **Reference data**: 2 files (`sebi_registry.json`, `broker_whitelist.json`)
@@ -23,8 +23,10 @@
 - **Documentation**: 4 files (`README.md`, `PHASE_1_ARCHITECTURE_AND_CODEBASE_MANUAL.md`, `AUDIT_REPORT.md`, `benchmarks/BENCHMARKS.md`)
 
 ### Status of Forensic Engines
-1. **Audio Deepfake Detection (Phase 2A — Active Neural Model)**:
-   - Genuine pretrained model **`Vansh180/deepfake-audio-wav2vec2`** running on **NVIDIA GeForce RTX 4050 Laptop GPU** (`cuda:0`) in FP16 precision with automatic CPU fallback.
+1. **Audio Deepfake Detection & Speech Captioning (Phase 2A — Active Neural Models)**:
+   - Genuine pretrained deepfake model **`Vansh180/deepfake-audio-wav2vec2`** running on **NVIDIA GeForce RTX 4050 Laptop GPU** (`cuda:0`) in FP16 precision with automatic CPU fallback.
+   - Genuine speech recognition & subtitle model **`openai/whisper-tiny`** running on GPU (`cuda:0`) via [`src/services/audio_transcriber.py`](file:///e:/fingaurd2.0/src/services/audio_transcriber.py) to provide timestamped subtitle segments and audio speech transcripts for human verification.
+   - Cross-vector spoken advisory evaluation: automatically parses transcribed audio speech against SEBI (Investment Advisers) Regulations and PFUTP fraud rules for spoken fraudulent promises (*"paisa double"*, *"100% loss recovery"*).
    - Decodes audio directly from streamed disk files via `soundfile`, downmixes to mono, and resamples to 16,000 Hz.
    - Sliding-window temporal chunking (4.0s window, 1.0s overlap, bounded to 180s) returning transparent per-chunk timeline segments and peak+mean aggregated scores.
    - Explicit fail-safe handling: if inference fails or dependencies are missing, returns `status="INFERENCE_UNAVAILABLE"` and `score=None` rather than fabricated scores or false-safe clearances.
@@ -51,44 +53,49 @@ rootdir: E:\fingaurd2.0
 configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.15.1
-collecting ... collected 34 items
+collecting ... collected 39 items
 
 tests/test_api.py::test_api_health PASSED                                [  2%]
 tests/test_api.py::test_api_config PASSED                                [  5%]
-tests/test_api.py::test_api_benchmarks_info PASSED                       [  8%]
-tests/test_api.py::test_api_scan_message PASSED                          [ 11%]
-tests/test_api.py::test_api_scan_app PASSED                              [ 14%]
-tests/test_api.py::test_api_scan_comprehensive PASSED                    [ 17%]
-tests/test_api.py::test_api_alerts_recent PASSED                         [ 20%]
-tests/test_api.py::test_api_generate_dossier PASSED                      [ 23%]
-tests/test_audio_engine.py::test_audio_preprocessor_resampling_and_mono PASSED [ 26%]
-tests/test_audio_engine.py::test_audio_preprocessor_chunking_sliding_window PASSED [ 29%]
-tests/test_audio_engine.py::test_audio_preprocessor_silence_detection PASSED [ 32%]
-tests/test_audio_engine.py::test_audio_preprocessor_short_clip_padding PASSED [ 35%]
-tests/test_audio_engine.py::test_audio_detector_unavailable_mode_transparency PASSED [ 38%]
-tests/test_audio_engine.py::test_audio_detector_corrupt_file_handling PASSED [ 41%]
-tests/test_audio_engine.py::test_deepfake_engine_audio_pipeline_execution PASSED [ 44%]
-tests/test_audio_engine.py::test_api_scan_audio_file_upload_endpoint PASSED [ 47%]
-tests/test_config.py::test_config_loaded PASSED                          [ 50%]
-tests/test_config.py::test_benchmarks_metadata PASSED                    [ 52%]
-tests/test_config.py::test_thresholds PASSED                             [ 55%]
-tests/test_engines.py::test_deepfake_engine_baseline PASSED              [ 58%]
-tests/test_engines.py::test_impersonation_engine_guaranteed_returns PASSED [ 61%]
-tests/test_engines.py::test_impersonation_engine_verified_broker PASSED  [ 64%]
-tests/test_engines.py::test_levenshtein_distance PASSED                  [ 67%]
-tests/test_engines.py::test_infrastructure_typosquatting PASSED          [ 70%]
-tests/test_engines.py::test_infrastructure_official_broker PASSED        [ 73%]
-tests/test_engines.py::test_alert_engine_synthesis PASSED                [ 76%]
-tests/test_hardening.py::test_sqlite_persistence_via_api PASSED          [ 79%]
-tests/test_hardening.py::test_alert_history_persistence PASSED           [ 82%]
-tests/test_hardening.py::test_media_upload_valid_disk_stream PASSED      [ 85%]
-tests/test_hardening.py::test_media_upload_invalid_extension PASSED      [ 88%]
-tests/test_hardening.py::test_media_upload_invalid_magic_bytes PASSED    [ 91%]
+tests/test_api.py::test_api_benchmarks_info PASSED                       [  7%]
+tests/test_api.py::test_api_scan_message PASSED                          [ 10%]
+tests/test_api.py::test_api_scan_app PASSED                              [ 12%]
+tests/test_api.py::test_api_scan_comprehensive PASSED                    [ 15%]
+tests/test_api.py::test_api_alerts_recent PASSED                         [ 17%]
+tests/test_api.py::test_api_generate_dossier PASSED                      [ 20%]
+tests/test_audio_engine.py::test_audio_preprocessor_resampling_and_mono PASSED [ 23%]
+tests/test_audio_engine.py::test_audio_preprocessor_chunking_sliding_window PASSED [ 25%]
+tests/test_audio_engine.py::test_audio_preprocessor_silence_detection PASSED [ 28%]
+tests/test_audio_engine.py::test_audio_preprocessor_short_clip_padding PASSED [ 30%]
+tests/test_audio_engine.py::test_audio_detector_unavailable_mode_transparency PASSED [ 33%]
+tests/test_audio_engine.py::test_audio_detector_corrupt_file_handling PASSED [ 35%]
+tests/test_audio_engine.py::test_deepfake_engine_audio_pipeline_execution PASSED [ 38%]
+tests/test_audio_engine.py::test_api_scan_audio_file_upload_endpoint PASSED [ 41%]
+tests/test_audio_engine.py::test_audio_transcriber_initialization PASSED [ 43%]
+tests/test_audio_engine.py::test_audio_transcriber_silence_handling PASSED [ 46%]
+tests/test_audio_engine.py::test_audio_transcriber_corrupt_data PASSED   [ 48%]
+tests/test_audio_engine.py::test_deepfake_engine_captions_and_spoken_advisory PASSED [ 51%]
+tests/test_audio_engine.py::test_api_scan_audio_returns_captions_metadata PASSED [ 53%]
+tests/test_config.py::test_config_loaded PASSED                          [ 56%]
+tests/test_config.py::test_benchmarks_metadata PASSED                    [ 58%]
+tests/test_config.py::test_thresholds PASSED                             [ 61%]
+tests/test_engines.py::test_deepfake_engine_baseline PASSED              [ 64%]
+tests/test_engines.py::test_impersonation_engine_guaranteed_returns PASSED [ 66%]
+tests/test_engines.py::test_impersonation_engine_verified_broker PASSED  [ 69%]
+tests/test_engines.py::test_levenshtein_distance PASSED                  [ 71%]
+tests/test_engines.py::test_infrastructure_typosquatting PASSED          [ 74%]
+tests/test_engines.py::test_infrastructure_official_broker PASSED        [ 76%]
+tests/test_engines.py::test_alert_engine_synthesis PASSED                [ 79%]
+tests/test_hardening.py::test_sqlite_persistence_via_api PASSED          [ 82%]
+tests/test_hardening.py::test_alert_history_persistence PASSED           [ 84%]
+tests/test_hardening.py::test_media_upload_valid_disk_stream PASSED      [ 87%]
+tests/test_hardening.py::test_media_upload_invalid_extension PASSED      [ 89%]
+tests/test_hardening.py::test_media_upload_invalid_magic_bytes PASSED    [ 92%]
 tests/test_hardening.py::test_media_upload_oversized_limit PASSED        [ 94%]
 tests/test_hardening.py::test_rate_limiting_enforcement PASSED           [ 97%]
 tests/test_hardening.py::test_cors_explicit_configuration PASSED         [100%]
 
-============================= 34 passed in 22.38s =============================
+============================= 39 passed in 16.40s =============================
 ```
 
 ---
