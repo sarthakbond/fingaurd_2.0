@@ -4,6 +4,8 @@ from typing import List, Optional
 from collections import deque
 from src.core.config import config
 from src.core.logging import logger
+from src.core.database import SessionLocal
+from src.models.db import AlertHistory
 from src.services.base import BaseAlertSynthesizer
 from src.models.media import MediaScanResponse
 from src.models.advisory import MessageScanResponse
@@ -18,6 +20,7 @@ class AlertEngine(BaseAlertSynthesizer):
     """
     Multi-Factor Decision Matrix, Real-Time Alert Dispatcher,
     and Regulatory SEBI SCORES Complaint Dossier Generator.
+    Backed by SQLite persistence via SQLAlchemy.
     """
 
     def __init__(self):
@@ -85,6 +88,31 @@ class AlertEngine(BaseAlertSynthesizer):
             evidence_points=evidence,
             recommended_sebi_action=recommended
         )
+
+    def _persist_alerts_to_db(self, alerts: List[AlertNotification]):
+        """Persists generated alerts to SQLite database."""
+        if not alerts:
+            return
+        try:
+            db = SessionLocal()
+            try:
+                for a in alerts:
+                    db_alert = AlertHistory(
+                        alert_id=a.alert_id,
+                        timestamp=a.timestamp,
+                        severity=a.severity,
+                        category=a.category,
+                        summary=a.summary,
+                        risk_score=a.risk_score,
+                        source=a.source,
+                        action_required=a.action_required
+                    )
+                    db.add(db_alert)
+                db.commit()
+            finally:
+                db.close()
+        except Exception as e:
+            logger.warning(f"Failed to persist alerts to SQLite: {e}")
 
     def synthesize(
         self,
@@ -160,6 +188,10 @@ class AlertEngine(BaseAlertSynthesizer):
         if verdict in ["CRITICAL_FRAUD", "SUSPICIOUS"]:
             dossier = self._generate_scores_dossier(media_res, advisory_res, infra_res, composite_risk)
 
+        # Persist alerts to DB
+        if alerts:
+            self._persist_alerts_to_db(alerts)
+
         return ComprehensiveScanResponse(
             scan_id=scan_id,
             timestamp=ts,
@@ -173,4 +205,28 @@ class AlertEngine(BaseAlertSynthesizer):
         )
 
     def get_recent_alerts(self, limit: int = 20) -> List[AlertNotification]:
+        """Queries alerts from SQLite with fallback to in-memory deque."""
+        try:
+            db = SessionLocal()
+            try:
+                records = db.query(AlertHistory).order_by(AlertHistory.id.desc()).limit(limit).all()
+                if records:
+                    return [
+                        AlertNotification(
+                            alert_id=r.alert_id,
+                            timestamp=r.timestamp,
+                            severity=r.severity,
+                            category=r.category,
+                            summary=r.summary,
+                            risk_score=r.risk_score,
+                            source=r.source or "",
+                            action_required=r.action_required or ""
+                        )
+                        for r in reversed(records)
+                    ]
+            finally:
+                db.close()
+        except Exception as e:
+            logger.warning(f"Failed to query alerts from SQLite: {e}")
+
         return list(self.recent_alerts)[-limit:]

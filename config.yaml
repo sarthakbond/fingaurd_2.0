@@ -4,8 +4,35 @@
 server:
   host: "127.0.0.1"
   port: 8000
-  cors_origins: ["*"]
-  max_upload_mb: 100
+
+database:
+  url: "sqlite:///./data/finguard.db"
+
+security:
+  # Explicit allowed origins (no wildcard by default)
+  cors_origins:
+    - "http://localhost:8000"
+    - "http://127.0.0.1:8000"
+  # Sliding window rate limiting per client IP
+  rate_limit_per_minute: 60
+  rate_limit_enabled: true
+
+uploads:
+  max_upload_mb: 50
+  temp_dir: "temp/uploads"
+  allowed_video_extensions:
+    - ".mp4"
+    - ".mkv"
+    - ".avi"
+    - ".mov"
+    - ".webm"
+  allowed_audio_extensions:
+    - ".wav"
+    - ".mp3"
+    - ".ogg"
+    - ".flac"
+    - ".m4a"
+  enforce_file_signatures: true
 
 hardware:
   preferred_device: "cuda"  # Auto-falls back to cpu if cuda unavailable

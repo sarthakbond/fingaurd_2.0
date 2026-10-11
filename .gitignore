@@ -20,6 +20,10 @@ htmlcov/
 *.log
 temp/
 .temp/
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
 
 # Environment Variables & Secrets
 .env
