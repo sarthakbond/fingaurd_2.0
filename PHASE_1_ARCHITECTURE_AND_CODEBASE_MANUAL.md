@@ -199,7 +199,7 @@ e:\fingaurd2.0/
   - Automatically formats the SEBI SCORES legal complaint dossier.
 
 ### 5.5 REST API Layer (`src/api/app.py`)
-Exposes 9 REST endpoints:
+Exposes 11 HTTP routes (1 HTML dashboard route + 10 JSON API routes):
 1. `GET /` — Serves the frontend web dashboard.
 2. `GET /api/health` — System health and engine status.
 3. `GET /api/config` — Active thresholds and benchmark settings.
