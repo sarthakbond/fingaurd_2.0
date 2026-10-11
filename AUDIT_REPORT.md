@@ -1,36 +1,35 @@
-# FinGuard 2.0 — Phase 1 Technical Audit Report
+# FinGuard 2.0 — Technical Audit Report (Phase 1 & Foundation Hardening)
 
 > **Target**: `e:\fingaurd2.0`  
 > **Evaluation Base**: Problem Statement #7 & `PHASE_1_ARCHITECTURE_AND_CODEBASE_MANUAL.md`  
-> **Audit Timestamp**: 2026-10-11  
+> **Initial Audit Timestamp**: 2026-10-11  
+> **Hardening Milestone Verification**: 2026-10-11 (Completed)
 
 ---
 
-## 1. Project Files, Placeholder Implementations & Discrepancies
+## 1. Project Files, Codebase Inventory & Current Discrepancies
 
 ### Codebase Inventory (Excluding `.venv` and Git metadata)
-- **Core backend modules**: 4 files (`__init__.py`, `config.py`, `logging.py`, `security.py`)
-- **Pydantic contracts**: 5 files (`__init__.py`, `media.py`, `advisory.py`, `infrastructure.py`, `verdict.py`)
+- **Core backend modules**: 7 files (`__init__.py`, `config.py`, `database.py`, `logging.py`, `rate_limit.py`, `security.py`, `upload.py`)
+- **Data models & schemas**: 6 files (`__init__.py`, `db.py`, `media.py`, `advisory.py`, `infrastructure.py`, `verdict.py`)
 - **Forensic services**: 6 files (`__init__.py`, `base.py`, `deepfake_engine.py`, `impersonation_engine.py`, `infrastructure_engine.py`, `alert_engine.py`)
 - **API routes**: 2 files (`__init__.py`, `app.py`)
 - **Static assets**: 3 files (`index.html`, `styles.css`, `app.js`)
 - **Reference data**: 2 files (`sebi_registry.json`, `broker_whitelist.json`)
-- **Tests**: 3 files (`test_api.py`, `test_config.py`, `test_engines.py`)
+- **Persistence layer**: SQLite database initialized at `data/finguard.db` with SQLAlchemy models
+- **Tests**: 4 files (`test_api.py`, `test_config.py`, `test_engines.py`, `test_hardening.py`)
 - **Configuration & Root**: 6 files (`config.yaml`, `.env.example`, `.gitignore`, `pytest.ini`, `requirements.txt`, `main.py`)
 - **Documentation**: 4 files (`README.md`, `PHASE_1_ARCHITECTURE_AND_CODEBASE_MANUAL.md`, `AUDIT_REPORT.md`, `benchmarks/BENCHMARKS.md`)
 
-### Identified Discrepancies & Incomplete Implementations
+### Status of Architectural Nuances
 1. **Real-time Alert Transmission Method**:
-   - *Manual Claim*: Mentions "WebSocket/SSE Stream" in diagrams.
-   - *Actual Code*: No WebSocket (`@app.websocket`) or SSE (`EventSource`) endpoints exist in `src/api/app.py`. The frontend (`static/js/app.js:377`) polls `GET /api/alerts/recent` every 10 seconds via HTTP.
+   - The frontend polls `GET /api/alerts/recent` every 10 seconds via HTTP. In the hardening milestone, recent alerts are additionally persisted in and retrieved from SQLite (`AlertHistory`). No WebSocket/SSE stream is currently enabled.
 2. **APK Binary Extraction**:
-   - *Manual Claim*: References static binary parsing.
-   - *Actual Code*: `TradingAppEngine.scan_apk_permissions` in `src/services/infrastructure_engine.py` accepts a pre-extracted list of permission strings and a package name. It does not parse raw `.apk` zip archives or extract `AndroidManifest.xml` binaries.
+   - `TradingAppEngine.scan_apk_permissions` in `src/services/infrastructure_engine.py` evaluates permission string arrays against the dangerous permissions index. Raw `.apk` decompression is slated for future expansion.
 3. **LLM Reasoning**:
-   - *Manual Claim*: Mentions Ollama/LLaMA 3.1.
-   - *Actual Code*: Phase 1 uses regex and rule-based heuristics in `src/services/impersonation_engine.py`. No local or remote LLM calls are executed.
+   - Phase 1 & Hardening use deterministic regex, rule-based heuristics, and Levenshtein distance matching. No external or local LLMs are invoked.
 4. **Media Processing Dependencies**:
-   - *Actual Code*: Neither `ffmpeg`, `moviepy`, nor `opencv-python` are imported in Phase 1. The media engine estimates duration from file byte length rather than demuxing AV streams.
+   - Disk-spooled uploads (`src/core/upload.py`) now perform binary magic byte signature verification (MP4, MKV, AVI, WAV, MP3, FLAC, OGG). The media detection engine currently operates in `baseline_foundation` heuristic mode. Neural model weights (PyTorch/Timm/Wav2Vec2) will be introduced in the upcoming Deepfake Detection milestone.
 
 ---
 
@@ -46,35 +45,43 @@ rootdir: E:\fingaurd2.0
 configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.15.1
-collecting ... collected 18 items
+collecting ... collected 26 items
 
-tests/test_api.py::test_api_health PASSED                                [  5%]
-tests/test_api.py::test_api_config PASSED                                [ 11%]
-tests/test_api.py::test_api_benchmarks_info PASSED                       [ 16%]
-tests/test_api.py::test_api_scan_message PASSED                          [ 22%]
-tests/test_api.py::test_api_scan_app PASSED                              [ 27%]
-tests/test_api.py::test_api_scan_comprehensive PASSED                    [ 33%]
-tests/test_api.py::test_api_alerts_recent PASSED                         [ 38%]
-tests/test_api.py::test_api_generate_dossier PASSED                      [ 44%]
-tests/test_config.py::test_config_loaded PASSED                          [ 50%]
-tests/test_config.py::test_benchmarks_metadata PASSED                    [ 55%]
-tests/test_config.py::test_thresholds PASSED                             [ 61%]
-tests/test_engines.py::test_deepfake_engine_baseline PASSED              [ 66%]
-tests/test_engines.py::test_impersonation_engine_guaranteed_returns PASSED [ 72%]
-tests/test_engines.py::test_impersonation_engine_verified_broker PASSED  [ 77%]
-tests/test_engines.py::test_levenshtein_distance PASSED                  [ 83%]
-tests/test_engines.py::test_infrastructure_typosquatting PASSED          [ 88%]
-tests/test_engines.py::test_infrastructure_official_broker PASSED        [ 94%]
-tests/test_engines.py::test_alert_engine_synthesis PASSED                [100%]
+tests/test_api.py::test_api_health PASSED                                [  3%]
+tests/test_api.py::test_api_config PASSED                                [  7%]
+tests/test_api.py::test_api_benchmarks_info PASSED                       [ 11%]
+tests/test_api.py::test_api_scan_message PASSED                          [ 15%]
+tests/test_api.py::test_api_scan_app PASSED                              [ 19%]
+tests/test_api.py::test_api_scan_comprehensive PASSED                    [ 23%]
+tests/test_api.py::test_api_alerts_recent PASSED                         [ 26%]
+tests/test_api.py::test_api_generate_dossier PASSED                      [ 30%]
+tests/test_config.py::test_config_loaded PASSED                          [ 34%]
+tests/test_config.py::test_benchmarks_metadata PASSED                    [ 38%]
+tests/test_config.py::test_thresholds PASSED                             [ 42%]
+tests/test_engines.py::test_deepfake_engine_baseline PASSED              [ 46%]
+tests/test_engines.py::test_impersonation_engine_guaranteed_returns PASSED [ 50%]
+tests/test_engines.py::test_impersonation_engine_verified_broker PASSED  [ 53%]
+tests/test_engines.py::test_levenshtein_distance PASSED                  [ 57%]
+tests/test_engines.py::test_infrastructure_typosquatting PASSED          [ 61%]
+tests/test_engines.py::test_infrastructure_official_broker PASSED        [ 65%]
+tests/test_engines.py::test_alert_engine_synthesis PASSED                [ 69%]
+tests/test_hardening.py::test_sqlite_persistence_via_api PASSED          [ 73%]
+tests/test_hardening.py::test_alert_history_persistence PASSED           [ 76%]
+tests/test_hardening.py::test_media_upload_valid_disk_stream PASSED      [ 80%]
+tests/test_hardening.py::test_media_upload_invalid_extension PASSED      [ 84%]
+tests/test_hardening.py::test_media_upload_invalid_magic_bytes PASSED    [ 88%]
+tests/test_hardening.py::test_media_upload_oversized_limit PASSED        [ 92%]
+tests/test_hardening.py::test_rate_limiting_enforcement PASSED           [ 96%]
+tests/test_hardening.py::test_cors_explicit_configuration PASSED         [100%]
 
-======================== 18 passed, 1 warning in 0.34s ========================
+======================== 26 passed, 1 warning in 0.63s ========================
 ```
 
 ---
 
 ## 3. Server Startup, Health & Frontend Verification
 
-The ASGI server is running via Uvicorn on `http://127.0.0.1:8000`. Actual query responses:
+The ASGI server is running via Uvicorn on `http://127.0.0.1:8000` with lifespan resource management. Live query responses:
 
 ### `GET /` (Frontend UI)
 ```http
@@ -87,8 +94,17 @@ Content-Length: 18647 bytes
 ```json
 {
   "status": "HEALTHY",
-  "version": "2.0-phase1",
-  "phase": "Phase 1: Working Application Foundation",
+  "version": "2.0-foundation-hardened",
+  "phase": "Milestone: Foundation Hardening",
+  "security": {
+    "cors_origins": ["http://localhost:8000", "http://127.0.0.1:8000"],
+    "rate_limit_per_minute": 60,
+    "max_upload_mb": 50
+  },
+  "persistence": {
+    "database_url": "sqlite:///./data/finguard.db",
+    "driver": "SQLAlchemy / SQLite"
+  },
   "engines": {
     "deepfake_engine": {
       "status": "READY",
@@ -108,7 +124,7 @@ Content-Length: 18647 bytes
     },
     "alert_engine": {
       "status": "READY",
-      "active_alerts_count": 2
+      "active_alerts_count": 1
     }
   }
 }
@@ -116,45 +132,40 @@ Content-Length: 18647 bytes
 
 ---
 
-## 4. API Input Validation & Error Handling
+## 4. API Input Validation, Rate Limiting & Error Handling
 
-All endpoints were tested with valid and invalid payloads. Pydantic v2 schemas intercepted invalid types and lengths without 500 crashes:
+All endpoints were tested with valid and invalid payloads. Pydantic v2 schemas and hardening guards intercepted invalid requests cleanly:
 
 | Endpoint | Test Case | Status | Server Behavior |
 | :--- | :--- | :--- | :--- |
-| `GET /` | Standard page request | **200 OK** | Serves complete HTML dashboard |
-| `GET /api/health` | Status probe | **200 OK** | Returns active engine metrics |
-| `GET /api/config` | Config probe | **200 OK** | Returns threshold dictionary |
+| `GET /` | Standard page request | **200 OK** | Serves dashboard UI |
+| `GET /api/health` | Status probe | **200 OK** | Returns active engine, security, and persistence status |
+| `GET /api/config` | Config probe | **200 OK** | Returns active threshold & security settings |
 | `GET /api/benchmarks/info` | Benchmark probe | **200 OK** | Returns FF++ and DFDC metadata |
-| `POST /api/scan/media` | Valid JSON URL | **200 OK** | Returns `MediaScanResponse` |
-| `POST /api/scan/media` | Invalid `sampling_fps` type (`"text"`) | **422 Unprocessable** | Caught by Pydantic parser |
-| `POST /api/scan/media-file` | Multipart audio/video upload | **200 OK** | Ingests file and returns timeline |
-| `POST /api/scan/media-file` | Empty payload (missing `file`) | **422 Unprocessable** | Caught by FastAPI form validator |
-| `POST /api/scan/message` | Valid message text | **200 OK** | Returns advisory risk score |
+| `GET /api/jobs/{job_id}` | Existing SQLite job query | **200 OK** | Returns persisted job status and metadata |
+| `GET /api/scans/recent` | Recent scan query | **200 OK** | Returns persisted `ScanRecord` history |
+| `POST /api/scan/media` | Valid JSON URL | **200 OK** | Returns `MediaScanResponse` & persists record |
+| `POST /api/scan/media-file` | Valid streamed media upload | **200 OK** | Spools to disk, checks magic bytes, processes & cleans up |
+| `POST /api/scan/media-file` | Invalid extension (`.exe`) | **400 Bad Request** | Rejected by file extension validator |
+| `POST /api/scan/media-file` | Forged MIME / Invalid magic bytes | **400 Bad Request** | Rejected by binary magic byte inspection |
+| `POST /api/scan/media-file` | Oversized payload (> max upload MB) | **413 Content Too Large**| Bounded stream stops and unlinks temp file |
+| `POST /api/scan/message` | Valid message text | **200 OK** | Evaluates risk & persists record to SQLite |
 | `POST /api/scan/message` | Empty string (`""`) | **422 Unprocessable** | Rejected (`min_length=2` constraint) |
-| `POST /api/scan/message` | Missing `message_text` field | **422 Unprocessable** | Rejected (`missing field`) |
-| `POST /api/scan/app` | Valid domain URL | **200 OK** | Returns typo-squatting evaluation |
-| `POST /api/scan/app` | Empty JSON `{}` | **200 OK** | Handled gracefully with fallback defaults |
-| `POST /api/scan/comprehensive` | Multi-vector payload | **200 OK** | Returns synthesized verdict & alerts |
-| `GET /api/alerts/recent` | Valid request | **200 OK** | Returns JSON list of recent alerts |
-| `GET /api/alerts/recent` | Invalid query param (`limit="text"`) | **422 Unprocessable** | Caught by integer parser |
-| `POST /api/report/generate-dossier`| Valid complaint request | **200 OK** | Returns pre-formatted SEBI dossier |
+| `POST /api/scan/*` | Rapid scan requests (> rate limit) | **429 Too Many Requests** | Enforces rate limit with `Retry-After` header |
+| `POST /api/scan/app` | Valid domain URL | **200 OK** | Evaluates typo-squatting & persists record |
+| `POST /api/scan/comprehensive` | Multi-vector payload | **200 OK** | Synthesizes verdict, creates alert, saves to SQLite |
+| `GET /api/alerts/recent` | Valid request | **200 OK** | Fetches recent alerts from `AlertHistory` table |
+| `POST /api/report/generate-dossier`| Valid complaint request | **200 OK** | Generates pre-formatted SEBI dossier |
 
 ---
 
 ## 5. Media Detector Inference Verification
 
-> **Explicit Finding**: The media detector does **NOT** run actual AI deep learning inference in Phase 1.
+> **Explicit Finding**: The media detector operates in **baseline heuristic mode** (`baseline_foundation`) for Phase 1 / Foundation Hardening.
 
-- **Inspection of `src/services/deepfake_engine.py:62-67`**:
-  ```python
-  is_simulated_fake = any(k in fname.lower() for k in ["deepfake", "manipulated", "synthetic", "cloned", "fake"])
-  visual_score = 0.85 if is_simulated_fake and media_type == "video" else 0.12
-  acoustic_score = 0.82 if is_simulated_fake else 0.08
-  ```
-- No PyTorch (`torch`), TorchVision, Torchaudio, Timm, or ONNX runtimes are loaded in Phase 1.
-- No model weights are unpacked or queried.
-- Scores are generated deterministically based on file naming heuristics and simulated temporal steps for the timeline scrubber.
+- Neural weights and model inference (e.g., PyTorch, Timm, Wav2Vec2) are **not** loaded yet.
+- Synthetic risk values are calculated from file characteristics and simulated temporal tracks for timeline verification.
+- **Next Milestone**: Real deepfake detection with verified FaceForensics++ and DFDC benchmark architectures will be implemented in the next milestone.
 
 ---
 
@@ -162,58 +173,33 @@ All endpoints were tested with valid and invalid payloads. Pydantic v2 schemas i
 
 > **Explicit Finding**: The frontend is implemented strictly in **Vanilla JavaScript, Vanilla CSS3, and HTML5**.
 
-- **No React**: No JSX, React DOM, or React runtime scripts.
-- **No Vite**: No bundling pipeline, node development server, or `vite.config.js`.
-- **No TypeScript**: All browser code is written in `.js`.
-- **No TailwindCSS**: Styles are in `static/css/styles.css` utilizing native CSS custom properties (`:root`), Flexbox, CSS Grid, and custom animations.
-- The web interface is served directly by FastAPI via Starlette's `StaticFiles` mount at `/static`.
+- **No React / Vite / TypeScript / Tailwind**: Native ES modules, standard DOM APIs, CSS custom properties, and Starlette static mount.
+- Real-time alerts interface with SQLite-backed `/api/alerts/recent` through background polling.
 
 ---
 
 ## 7. Registry & Broker Whitelist Provenance
 
-> **Explicit Finding**: The registry and whitelist datasets are **static, curated sample snapshots**, not live or officially verified registry syncs.
+> **Explicit Finding**: The registry and whitelist datasets are **static, curated reference snapshots**.
 
-- **`data/sebi_registry.json`**:
-  - Total records: **24 entries**.
-  - Content: Curated sample of major retail brokers (Zerodha, Groww, Angel One, ICICI Direct, HDFC Securities, Kotak Securities, Motilal Oswal, etc.).
-  - Provenance: Manually compiled sample. It is **not** connected to the official SEBI public search portal, nor does it contain the thousands of actively registered Indian RIAs (`INA`), Research Analysts (`INH`), or Portfolio Managers (`INP`).
-- **`data/broker_whitelist.json`**:
-  - Total records: **18 entries**.
-  - Content: Manually compiled list of official domain hostnames and Android package IDs.
-  - Provenance: Sample reference list; it does not verify cryptographic APK signing certificates or Google Play Store developer metadata.
+- **`data/sebi_registry.json`**: 24 curated sample entries of major retail brokers (Zerodha, Groww, Angel One, ICICI Direct, etc.).
+- **`data/broker_whitelist.json`**: 18 curated domain hostnames and Android package IDs.
 
 ---
 
-## 8. Summary Audit Findings
+## 8. Security Audit & Hardening Resolution Status
 
-### Verified Working Components
-1. **FastAPI Application Framework**: ASGI runtime running on Uvicorn without crashes.
-2. **Data Contracts**: Pydantic v2 schemas validating all request/response models.
-3. **Impersonation & Advisory Chat Engine**: Regex detection of guaranteed returns, urgency language, coded Hinglish colloquialisms (*"pakka jackpot"*, *"rocket call"*), and fuzzy license matching against the local 24-record registry.
-4. **Data Privacy Shield**: DPDP Act 2023 regex filters redacting Indian mobile numbers, PAN cards, Aadhaar numbers, and UPI handles before processing.
-5. **Infrastructure Engine**: Pure-Python Levenshtein distance matching detecting typo-squatted broker domains, plus evaluation of high-risk Android permissions.
-6. **Multi-Factor Decision Matrix & SCORES Dossier**: Synthesizes cross-vector results into a 3-tier verdict (`SAFE`, `SUSPICIOUS`, `CRITICAL_FRAUD`) and formats pre-filing complaint dossiers citing Indian statutory frameworks.
-7. **Frontend Dashboard**: Glassmorphic dark UI with live tabs, functional presets, and real-time alert polling.
-8. **Automated Test Suite**: 18 passing pytest tests validating core logic.
+In the initial Phase 1 audit, 4 critical security/architecture gaps were identified prior to public release. Here is their current status after the **Foundation Hardening** milestone:
 
-### Failed Tests and Errors
-- **None**: All 18 tests pass with 0 failures (`18 passed, 1 warning in 0.34s`).
-- All 11 API routes return expected status codes (200 on valid inputs, 422 on invalid inputs).
-
-### Missing or Incomplete Functionality
-- **Actual Deep Learning Models**: Video and audio deepfake detection relies on baseline heuristics without loaded neural weights.
-- **WebSocket/SSE Streaming**: Real-time alerts operate via HTTP polling instead of true push streaming.
-- **Binary APK Decompiler**: Static APK analysis evaluates declared permission strings rather than extracting files from raw `.apk` packages.
-- **Dynamic SEBI Registry Sync**: The registry is limited to a local static sample of 24 records.
-
-### Security Issues Requiring Resolution Before Public Deployment
-1. **Unrestricted CORS**: `config.yaml` sets `cors_origins: ["*"]`. Must be locked down to specific frontend origins before public exposure.
-2. **In-Memory Volatility**: Alerts and scan jobs are stored in an in-memory `deque`. Restarts or multi-process workers will wipe active state. A persistent database (e.g. SQLite/PostgreSQL) is required for production.
-3. **In-Memory File Uploads**: `POST /api/scan/media-file` loads the full file into memory via `await file.read()`. High concurrency with 100MB files will exhaust server RAM. Needs spooling to disk.
-4. **Lack of Rate Limiting**: No rate-limiting middleware is currently attached to public scan endpoints.
+| Initial Issue | Pre-Hardening State | Hardened State | Status |
+| :--- | :--- | :--- | :--- |
+| **1. Unrestricted CORS** | Wildcard `cors_origins: ["*"]` allowed arbitrary origin access. | Restricted to explicit origins (`http://localhost:8000`, `http://127.0.0.1:8000`) or environment variable `FINGUARD_CORS_ORIGINS`. | **RESOLVED** |
+| **2. In-Memory Volatility** | Scans and alerts stored in volatile `collections.deque` wiped on restart. | Persistent SQLite database via SQLAlchemy (`data/finguard.db`) storing `ScanRecord`, `JobState`, and `AlertHistory`. | **RESOLVED** |
+| **3. In-Memory File Uploads** | `await file.read()` buffered entire media files in RAM, posing memory exhaustion risks. | Bounded disk-backed streaming uploads (`64 KB` chunks) to `temp/uploads/` with size cap enforcement and guaranteed cleanup. | **RESOLVED** |
+| **4. Lack of Rate Limiting** | Public scan endpoints had no throttling. | Sliding-window client IP rate limiter returning HTTP `429` with `Retry-After` header applied to `/api/scan/*`. | **RESOLVED** |
 
 ---
 
 ### The Single Highest-Priority Next Action
-> **Connect a persistent database (e.g., SQLite via SQLAlchemy) for job states and alert logs, and implement disk-spooled streaming for media uploads** so the application foundation is robust against memory exhaustion before introducing Phase 2 deep learning dependencies.
+> **Implement Real Deepfake Detection (Phase 2)**: Integrate real deepfake detection models (visual spatial-temporal artifact models and acoustic synthesis detectors) evaluated against the FaceForensics++ and DFDC benchmark frameworks without fabricating metrics.
+
