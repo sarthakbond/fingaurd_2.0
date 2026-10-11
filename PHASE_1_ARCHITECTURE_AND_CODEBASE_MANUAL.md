@@ -4,7 +4,7 @@
 > **Domain**: Fintech  
 > **Problem Statement Title**: 7. AI-Based Investor Fraud & Impersonation Detection  
 > **Regulatory Alignment**: SEBI Act (1992), SEBI (Investment Advisers) Regulations (2013), SEBI (Research Analysts) Regulations (2014), SEBI (Portfolio Managers) Regulations (2020), SEBI PFUTP Regulations (2003), Digital Personal Data Protection (DPDP) Act (2023).  
-> **Milestone Status**: **Foundation Hardening (Completed & Verified)**
+> **Milestone Status**: **Phase 2A: Neural Audio Deepfake Detection (Completed & Verified)**
 
 ---
 
@@ -21,7 +21,7 @@ The platform addresses the three distinct attack vectors defined in the official
 ### Scientific Integrity & Academic Benchmarks
 In strict adherence to project directives:
 - **No Fabricated Accuracies**: The platform establishes the operational foundation, data persistence, and forensic interfaces without inventing unverified detection metrics or claiming premature AI performance.
-- **Academic Benchmark Scoping**: Candidate deepfake video and audio models are specified to be evaluated against **FaceForensics++** (evaluating `Deepfakes`, `Face2Face`, `FaceSwap`, `NeuralTextures` across `c23` and `c40` compression tiers) and the **DFDC (Deepfake Detection Challenge)** dataset before neural weight integration in the next milestone.
+- **Academic Benchmark Scoping**: In Phase 2A, the acoustic pipeline integrates `Vansh180/deepfake-audio-wav2vec2` fine-tuned on the **ASVspoof 2021 PA** benchmark. Video deepfake detection remains scoped around candidate benchmarks (**FaceForensics++** and **DFDC**) awaiting Phase 2B.
 
 ---
 
@@ -30,6 +30,10 @@ In strict adherence to project directives:
 | Category | Technology | Version | Architectural Role |
 | :--- | :--- | :--- | :--- |
 | **Language & Runtime** | Python (CPython 64-bit) | 3.11.17 | Backend services, forensic engines, and REST API |
+| **Deep Learning Framework**| PyTorch (with CUDA 12.4) | 2.6.0+cu124 | GPU-accelerated tensor execution on NVIDIA GeForce RTX 4050 |
+| **Audio Processing** | Torchaudio / SoundFile / Scipy | 2.6.0 / 0.14.0 / 1.17.1 | Multi-format audio decoding, mono mixing, and 16kHz resampling |
+| **Model Architecture** | Hugging Face Transformers | 5.19.0 | Wav2Vec 2.0 feature extraction & binary classification |
+| **Deployed Audio Model** | `Vansh180/deepfake-audio-wav2vec2` | safetensors (95M params) | Fine-tuned acoustic deepfake detection (ASVspoof 2021 PA) |
 | **API Framework** | FastAPI | 0.143.0 | Async ASGI web server, lifespan handlers, and route dispatching |
 | **ASGI Server** | Uvicorn | 0.54.0 | High-concurrency production ASGI web server |
 | **ORM & Database** | SQLAlchemy | 2.1.4 | SQLite persistence for scan records, job states, and alert history |
@@ -39,7 +43,7 @@ In strict adherence to project directives:
 | **Rate Limiting** | Sliding Window (In-Memory) | Custom | Thread-safe 60-second rolling window rate limiter per client IP |
 | **Upload Pipeline** | Disk-Backed Streaming | Custom | 64KB chunked disk streaming with magic bytes verification |
 | **HTTP Client** | HTTPX | 0.28.1 | High-performance asynchronous HTTP client for testing |
-| **Test Runner** | Pytest | 9.1.1 | Automated unit and integration testing suite |
+| **Test Runner** | Pytest | 9.1.1 | Automated unit and integration testing suite (34 passing tests) |
 | **Multipart Parsing** | python-multipart | 0.0.32 | Streaming binary file uploads for video and audio forensic ingestion |
 | **Frontend Architecture** | Vanilla HTML5 / ES6+ | Modern | Zero-build reactive command center dashboard |
 | **Styling System** | Vanilla CSS3 (Custom Tokens) | Modern | Custom glassmorphic dark theme, responsive grid, micro-animations |

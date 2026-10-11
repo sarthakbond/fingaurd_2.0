@@ -1,4 +1,4 @@
-﻿annotated-doc==0.0.5
+annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.15.1
 certifi==2026.7.22
@@ -24,3 +24,14 @@ starlette==1.7.0
 typing-inspection==0.4.4
 typing_extensions==4.16.0
 uvicorn==0.54.0
+
+# Neural Audio Deepfake Detection (Phase 2A - RTX 4050 / cu124 or CPU)
+# Note: For CUDA support on Windows, install torch & torchaudio via:
+# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
+torch>=2.2.0
+torchaudio>=2.2.0
+transformers>=4.40.0
+soundfile>=0.12.1
+scipy>=1.14.0
+numpy>=1.26.0
+safetensors>=0.4.0

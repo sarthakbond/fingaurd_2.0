@@ -38,6 +38,22 @@ hardware:
   preferred_device: "cuda"  # Auto-falls back to cpu if cuda unavailable
   force_cpu: false
 
+# Audio Deepfake Detection Configuration (Phase 2A Baseline Candidate)
+audio_detection:
+  model_id: "Vansh180/deepfake-audio-wav2vec2"
+  chunk_duration_sec: 4.0
+  chunk_overlap_sec: 1.0
+  max_audio_duration_sec: 180.0
+  min_audio_duration_sec: 1.0
+  aggregation_peak_weight: 0.70
+  aggregation_mean_weight: 0.30
+  training_dataset: "ASVspoof 2021 PA (balanced subset)"
+  limitations:
+    - "Trained primarily on ASVspoof 2021 PA physical replay and synthetic speech benchmarks."
+    - "May exhibit performance degradation on unseen neural vocoders (e.g. HiFi-GAN, Tortoise, ElevenLabs)."
+    - "Lossy compression codecs (e.g. WhatsApp voice notes, low-bitrate MP3/Opus) can alter high-frequency artifacts."
+    - "Model represents an initial research baseline; independent domain calibration is required."
+
 # Thresholds for Multi-Factor Detection & Verification
 thresholds:
   # Requirement 1: Deepfake Video & Audio

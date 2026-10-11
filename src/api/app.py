@@ -90,8 +90,8 @@ async def health_check():
     """System health check and module status."""
     return {
         "status": "HEALTHY",
-        "version": "2.0-foundation-hardened",
-        "phase": "Milestone: Foundation Hardening",
+        "version": "2.0-phase2a-audio",
+        "phase": "Phase 2A: Neural Audio Deepfake Detection",
         "security": {
             "cors_origins": config.cors_origins,
             "rate_limit_per_minute": config.rate_limit_per_minute,
@@ -105,7 +105,14 @@ async def health_check():
             "deepfake_engine": {
                 "status": "READY",
                 "mode": deepfake_engine.mode,
-                "benchmark_targets": ["FaceForensics++", "DFDC"]
+                "audio_detector": {
+                    "model_id": deepfake_engine.audio_detector.model_id,
+                    "available": deepfake_engine.audio_detector.is_available(),
+                    "device": deepfake_engine.audio_detector.get_device(),
+                    "training_basis": "ASVspoof 2021 PA"
+                },
+                "video_mode": "baseline_foundation (Phase 2B candidate)",
+                "benchmark_targets": ["FaceForensics++", "DFDC", "ASVspoof 2021 PA"]
             },
             "impersonation_engine": {
                 "status": "READY",
@@ -155,14 +162,20 @@ async def scan_media_json(request: MediaScanRequest, db: Session = Depends(get_d
     res = deepfake_engine.scan_media(request)
 
     # Persist JobState and ScanRecord
-    job_rec = JobState(job_id=res.job_id, status="COMPLETED", result_payload=res.model_dump_json())
+    risk_val = max(
+        res.visual_manipulation_score,
+        res.acoustic_manipulation_score if res.acoustic_manipulation_score is not None else 0.0
+    )
+    verdict_str = "CRITICAL_FRAUD" if res.is_deepfake else ("UNVERIFIED" if res.status != "COMPLETED" else "SAFE")
+
+    job_rec = JobState(job_id=res.job_id, status=res.status, result_payload=res.model_dump_json())
     scan_rec = ScanRecord(
         scan_id=res.job_id,
         timestamp=datetime.now(timezone.utc).isoformat(),
         scan_type="media",
         input_target=request.media_url or "URL Request",
-        risk_score=max(res.visual_manipulation_score, res.acoustic_manipulation_score),
-        verdict="CRITICAL_FRAUD" if res.is_deepfake else "SAFE",
+        risk_score=risk_val,
+        verdict=verdict_str,
         processing_time_ms=res.processing_time_ms,
         raw_payload=res.model_dump_json()
     )
@@ -192,17 +205,28 @@ async def scan_media_file(
             sample_bytes = f_in.read(65536)
 
         req = MediaScanRequest(sampling_fps=sampling_fps, extract_audio=extract_audio)
-        res = deepfake_engine.scan_media(req, file_bytes=sample_bytes, filename=file.filename)
+        res = deepfake_engine.scan_media(
+            req,
+            file_bytes=sample_bytes,
+            filename=file.filename,
+            file_path=str(temp_path)
+        )
 
         # Persist JobState and ScanRecord
-        job_rec = JobState(job_id=res.job_id, status="COMPLETED", result_payload=res.model_dump_json())
+        risk_val = max(
+            res.visual_manipulation_score,
+            res.acoustic_manipulation_score if res.acoustic_manipulation_score is not None else 0.0
+        )
+        verdict_str = "CRITICAL_FRAUD" if res.is_deepfake else ("UNVERIFIED" if res.status != "COMPLETED" else "SAFE")
+
+        job_rec = JobState(job_id=res.job_id, status=res.status, result_payload=res.model_dump_json())
         scan_rec = ScanRecord(
             scan_id=res.job_id,
             timestamp=datetime.now(timezone.utc).isoformat(),
             scan_type="media",
             input_target=file.filename,
-            risk_score=max(res.visual_manipulation_score, res.acoustic_manipulation_score),
-            verdict="CRITICAL_FRAUD" if res.is_deepfake else "SAFE",
+            risk_score=risk_val,
+            verdict=verdict_str,
             processing_time_ms=res.processing_time_ms,
             raw_payload=res.model_dump_json()
         )

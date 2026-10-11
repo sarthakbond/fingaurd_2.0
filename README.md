@@ -2,7 +2,7 @@
 
 > **Primary Source of Truth**: Hackathon 2026 — Engineering Track Problem Statement #7 (Domain: Fintech)  
 > **Mandate**: Build a real-time detection and alert system for securities-market fraud — flagging deepfake media, impersonation accounts, and fake trading-app indicators — aligned with SEBI's investor-protection mandate.  
-> **Current Milestone**: **Foundation Hardening** (Completed & Verified)
+> **Current Milestone**: **Phase 2A: Audio Deepfake Detection** (Completed & Verified)
 
 ---
 
@@ -20,10 +20,12 @@ FinGuard 2.0 addresses the three core requirements specified in Problem Statemen
               v                                  v                                                  v
 +-------------------------------+  +-------------------------------+  +-------------------------------+
 |  Requirement 1: Media Engine  |  | Requirement 2: Advisory Engine|  | Requirement 3: App/Infra Eng |
-|  - Bounded Disk-Stream Upload |  |  - DPDP Act 2023 PII Shield   |  |  - Domain Typo-Squatting Scan |
-|  - Magic Byte Signature Check |  |  - Guaranteed Returns Detector|  |  - Levenshtein Distance Match |
-|  - Timeline Risk Scrubber     |  |  - Hinglish Colloquialisms    |  |  - Android APK Permission Chk |
-|  - Benchmark Target: FF++/DFDC|  |  - SEBI Intermediary Registry |  |  - Surveillance / OTP Threat  |
+|  - Neural Wav2Vec2 Audio Model|  |  - DPDP Act 2023 PII Shield   |  |  - Domain Typo-Squatting Scan |
+|  - RTX 4050 GPU Acceleration  |  |  - Guaranteed Returns Detector|  |  - Levenshtein Distance Match |
+|  - Sliding-Window Chunking    |  |  - Hinglish Colloquialisms    |  |  - Android APK Permission Chk |
+|  - Bounded Disk-Stream Upload |  |  - SEBI Intermediary Registry |  |  - Surveillance / OTP Threat  |
+|  - Magic Byte Signature Check |  |                               |  |                               |
+|  - Video: Phase 2B Baseline   |  |                               |  |                               |
 +-------------------------------+  +-------------------------------+  +-------------------------------+
               |                                  |                                                  |
               +----------------------------------+---------------+----------------------------------+
@@ -39,9 +41,15 @@ FinGuard 2.0 addresses the three core requirements specified in Problem Statemen
 ```
 
 ### Requirement 1: Deepfake Video & Audio Detection
-- **Architectural Mapping**: [`src/services/deepfake_engine.py`](file:///e:/fingaurd2.0/src/services/deepfake_engine.py) & [`src/models/media.py`](file:///e:/fingaurd2.0/src/models/media.py).
-- **Current Implementation**: Bounded disk-backed upload streaming via [`src/core/upload.py`](file:///e:/fingaurd2.0/src/core/upload.py), file extension and magic byte validation (MP4, MKV, AVI, MOV, WebM, WAV, MP3, OGG, FLAC), timeline segment generation for UI scrubbers, and candidate benchmark specification tracking.
-- **Academic Benchmark Alignment**: Built to integrate models benchmarked against **FaceForensics++** (methods: Deepfakes, Face2Face, FaceSwap, NeuralTextures across c23/c40 compression) and the **DFDC (Deepfake Detection Challenge)** dataset. Candidate backbones (`EfficientNet-B4`, `Xception`, `Wav2Vec2`) are evaluated before neural weight integration in the next milestone.
+- **Architectural Mapping**: [`src/services/deepfake_engine.py`](file:///e:/fingaurd2.0/src/services/deepfake_engine.py), [`src/services/audio_deepfake_detector.py`](file:///e:/fingaurd2.0/src/services/audio_deepfake_detector.py), [`src/services/audio_preprocessor.py`](file:///e:/fingaurd2.0/src/services/audio_preprocessor.py) & [`src/models/media.py`](file:///e:/fingaurd2.0/src/models/media.py).
+- **Phase 2A Implementation (Audio Track)**:
+  - **Genuine Neural Model**: Integrates `Vansh180/deepfake-audio-wav2vec2` (`facebook/wav2vec2-base` backbone, ~95M parameters, `model.safetensors`).
+  - **Hardware Execution**: Hardware-accelerated on **NVIDIA GeForce RTX 4050 Laptop GPU** (`cuda:0`) in FP16 precision (~1.1 GB VRAM, ~120–150 ms per chunk) with automatic CPU fallback.
+  - **Signal Preprocessing & Chunking**: Automatic mono conversion and 16,000 Hz resampling via [`src/services/audio_preprocessor.py`](file:///e:/fingaurd2.0/src/services/audio_preprocessor.py). Processes audio using configurable 4.0-second sliding windows with 1.0-second overlap, bounded to 180 seconds to prevent resource exhaustion.
+  - **Transparent Aggregation**: Returns both peak chunk spoof probability and mean score ($0.70 \times \text{peak} + 0.30 \times \text{mean}$) along with per-chunk timeline segments.
+  - **Fail-Safe Integrity**: If PyTorch, model weights, or audio decoding fail, the engine explicitly returns `status="INFERENCE_UNAVAILABLE"` or `"INFERENCE_ERROR"` with `score=None` and `confidence="UNAVAILABLE"`. It **never** silently returns `0.0` or marks failed audio as safe.
+  - **Training Basis & Documented Limitations**: The candidate model was fine-tuned on a balanced subset of **ASVspoof 2021 PA** (Physical Access / Replay & Synthetic voice attacks). It has not been domain-calibrated for modern commercial zero-shot neural vocoders (e.g. Tortoise, ElevenLabs) or compressed social media audio (e.g. WhatsApp Opus voice notes). All scores represent an initial research baseline.
+- **Video Track (Pending Phase 2B)**: Preserved in Phase 1 baseline foundation mode with candidate benchmark tracking (FaceForensics++ c23/c40 and DFDC). Video neural models remain completely out of scope for Phase 2A.
 
 ### Requirement 2: Impersonation Accounts & Advisory Messages (WhatsApp / Telegram)
 - **Architectural Mapping**: [`src/services/impersonation_engine.py`](file:///e:/fingaurd2.0/src/services/impersonation_engine.py) & [`src/models/advisory.py`](file:///e:/fingaurd2.0/src/models/advisory.py).

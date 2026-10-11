@@ -24,11 +24,23 @@ class MediaScanResponse(BaseModel):
     status: str
     filename: Optional[str] = None
     media_type: str = Field(..., description="video, audio, or image")
-    visual_manipulation_score: float = Field(..., ge=0.0, le=1.0)
-    acoustic_manipulation_score: float = Field(..., ge=0.0, le=1.0)
+    visual_manipulation_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    acoustic_manipulation_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     is_deepfake: bool
-    confidence_level: str = Field(..., description="LOW, MEDIUM, or HIGH")
+    confidence_level: str = Field(..., description="LOW, MEDIUM, HIGH, or UNAVAILABLE")
     timeline: List[TimelineSegment] = Field(default_factory=list)
     key_indicators: List[str] = Field(default_factory=list)
     benchmarks_evaluated: List[BenchmarkEvaluationMetadata] = Field(default_factory=list)
     processing_time_ms: float
+
+    # Phase 2A Neural Audio Metadata (Backward-compatible additions)
+    audio_model_identity: Optional[str] = None
+    audio_inference_mode: str = Field(
+        default="baseline_foundation",
+        description="genuine_neural_wav2vec2, baseline_foundation, or unavailable"
+    )
+    audio_duration_seconds: Optional[float] = None
+    audio_chunk_count: int = 0
+    audio_peak_chunk_score: Optional[float] = None
+    audio_mean_chunk_score: Optional[float] = None
+    audio_limitations: List[str] = Field(default_factory=list)
