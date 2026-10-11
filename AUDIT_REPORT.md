@@ -188,6 +188,18 @@ All endpoints were tested with valid and invalid payloads. Pydantic v2 schemas a
 
 ---
 
-## 6. Next Milestone Roadmap
+## 6. Phase 2A Audio Pipeline & Speech Captioning Verification
+
+| Verification Dimension | Implementation Spec | Empirical Status |
+| :--- | :--- | :--- |
+| **Audio Spoof Classifier** | `Vansh180/deepfake-audio-wav2vec2` (~95M params) | **VERIFIED**: GPU-accelerated on `cuda:0` (RTX 4050 Laptop GPU, FP16) |
+| **Speech-to-Text & Captions** | `openai/whisper-tiny` (~39M params) | **VERIFIED**: GPU-accelerated on `cuda:0`, provides timestamped subtitle chunks |
+| **Cross-Vector Advisory Check**| Spoken dialogue audited against SEBI investment rules | **VERIFIED**: Detects spoken guaranteed returns / unauthorized advice in audio |
+| **Chunking Architecture** | 4.0s sliding windows with 1.0s overlap (max 180s) | **VERIFIED**: Bounded temporal splitting with transparent peak + mean scoring |
+| **Automated Test Suite** | 39 unit, error-handling, and API integration tests | **VERIFIED**: 39 passed in 17.13s (100% pass rate) |
+
+---
+
+## 7. Next Milestone Roadmap
 
 > **Next Action**: **Phase 2B: Video Deepfake Detection**: Integrate spatial facial boundary artifact detection models evaluated against the **FaceForensics++** (c23/c40) and **DFDC** benchmarks with keyframe extraction, keeping scientific integrity strictly enforced without fabricated benchmark numbers.

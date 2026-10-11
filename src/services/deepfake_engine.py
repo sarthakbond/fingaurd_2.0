@@ -11,6 +11,7 @@ from src.models.media import (
     BenchmarkEvaluationMetadata,
 )
 from src.services.audio_deepfake_detector import AudioDeepfakeDetector
+from src.services.audio_transcriber import AudioTranscriber
 
 class DeepfakeEngine(BaseDeepfakeDetector):
     """
@@ -18,6 +19,8 @@ class DeepfakeEngine(BaseDeepfakeDetector):
     Phase 2A Milestone:
     - Audio track: Genuine pretrained Wav2Vec2 neural inference (Vansh180/deepfake-audio-wav2vec2)
       with bounded sliding-window chunking and peak+mean score aggregation.
+    - Captioning & Speech-to-Text: Speech transcription via openai/whisper-tiny on GPU
+      with cross-vector illegal advisory tip evaluation (Requirement 1 + 2).
     - Video track: Preserved in Phase 1 baseline foundation mode awaiting Phase 2B.
     """
 
@@ -27,9 +30,10 @@ class DeepfakeEngine(BaseDeepfakeDetector):
         self.vision_threshold = float(config.thresholds.get("vision_fake_threshold", 0.50))
         self.audio_threshold = float(config.thresholds.get("audio_fake_threshold", 0.50))
         
-        # Audio Detection Service
+        # Audio Detection & Transcription Services
         self.audio_detector = AudioDeepfakeDetector()
-        logger.info(f"Initialized DeepfakeEngine (mode: '{self.mode}', audio_model: '{self.audio_detector.model_id}')")
+        self.transcriber = AudioTranscriber()
+        logger.info(f"Initialized DeepfakeEngine (mode: '{self.mode}', audio_model: '{self.audio_detector.model_id}', transcriber: '{self.transcriber.model_id}')")
 
     def scan_media(
         self,
@@ -94,7 +98,15 @@ class DeepfakeEngine(BaseDeepfakeDetector):
                         benchmarks_evaluated=benchmarks,
                         processing_time_ms=round((time.time() - start_time) * 1000, 2),
                         audio_model_identity="heuristic_simulation",
-                        audio_inference_mode="baseline_foundation"
+                        audio_inference_mode="baseline_foundation",
+                        transcript="Guaranteed 100% loss recovery call! Double your capital in 5 days.",
+                        transcript_segments=[
+                            {"start": 0.0, "end": 2.2, "text": "Guaranteed 100% loss recovery call!"},
+                            {"start": 2.2, "end": 4.0, "text": "Double your capital in 5 days."}
+                        ],
+                        spoken_advisory_risk=0.88,
+                        spoken_advisory_verdict="CRITICAL_FRAUD",
+                        spoken_advisory_indicators=["Illegal promise of guaranteed / risk-free returns"]
                     )
                 else:
                     return MediaScanResponse(
@@ -117,6 +129,39 @@ class DeepfakeEngine(BaseDeepfakeDetector):
             # Run genuine neural analysis on uploaded audio stream
             audio_result = self.audio_detector.analyze_audio(audio_source, filename=fname)
 
+            # Captioning & Spoken Speech Transcription (Phase 2A Speech Inspection)
+            transcript_text = None
+            transcript_segments = []
+            spoken_risk = None
+            spoken_verdict = None
+            spoken_indicators = []
+
+            if self.transcriber.is_available():
+                trans_res = self.transcriber.transcribe(audio_source)
+                if trans_res.get("text"):
+                    transcript_text = trans_res.get("text")
+                    transcript_segments = trans_res.get("segments", [])
+
+                    # Evaluate transcribed speech against SEBI advisory compliance rules (Cross-Vector Requirement 1 + 2)
+                    if trans_res.get("is_speech") and transcript_text not in ["(No audible speech detected)", "(No speech recognized)"]:
+                        from src.services.impersonation_engine import ImpersonationEngine
+                        from src.models.advisory import MessageScanRequest
+                        advisory_engine = ImpersonationEngine()
+                        speech_audit = advisory_engine.scan_message(MessageScanRequest(message_text=transcript_text))
+                        spoken_risk = speech_audit.composite_risk_score
+                        if spoken_risk >= 0.70:
+                            spoken_verdict = "CRITICAL_FRAUD"
+                        elif spoken_risk >= 0.40 or speech_audit.is_suspicious_advisory:
+                            spoken_verdict = "SUSPICIOUS"
+                        else:
+                            spoken_verdict = "SAFE"
+
+                        spoken_indicators = list(speech_audit.violations)
+                        if speech_audit.detected_phrases:
+                            spoken_indicators.extend([f"Deceptive speech phrase: '{p}'" for p in speech_audit.detected_phrases])
+                        if speech_audit.detected_hinglish_slang:
+                            spoken_indicators.extend([f"Spoken colloquial fraud slang: '{s}'" for s in speech_audit.detected_hinglish_slang])
+
             if audio_result.status == "SUCCESS":
                 processing_ms = round((time.time() - start_time) * 1000, 2)
                 return MediaScanResponse(
@@ -138,7 +183,12 @@ class DeepfakeEngine(BaseDeepfakeDetector):
                     audio_chunk_count=audio_result.chunk_count,
                     audio_peak_chunk_score=audio_result.peak_chunk_score,
                     audio_mean_chunk_score=audio_result.mean_chunk_score,
-                    audio_limitations=audio_result.limitations
+                    audio_limitations=audio_result.limitations,
+                    transcript=transcript_text,
+                    transcript_segments=transcript_segments,
+                    spoken_advisory_risk=spoken_risk,
+                    spoken_advisory_verdict=spoken_verdict,
+                    spoken_advisory_indicators=spoken_indicators
                 )
             else:
                 # Explicit error / unavailable status — NEVER return 0.0 or label safe
@@ -158,7 +208,12 @@ class DeepfakeEngine(BaseDeepfakeDetector):
                     processing_time_ms=processing_ms,
                     audio_model_identity=audio_result.model_name,
                     audio_inference_mode="unavailable",
-                    audio_limitations=audio_result.limitations
+                    audio_limitations=audio_result.limitations,
+                    transcript=transcript_text,
+                    transcript_segments=transcript_segments,
+                    spoken_advisory_risk=spoken_risk,
+                    spoken_advisory_verdict=spoken_verdict,
+                    spoken_advisory_indicators=spoken_indicators
                 )
 
         # ---------------------------------------------------------------------

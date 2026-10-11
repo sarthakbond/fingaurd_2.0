@@ -44,11 +44,17 @@ class AlertEngine(BaseAlertSynthesizer):
         evidence = []
         target = "Unknown Fraudulent Entity"
 
-        if media_res and media_res.is_deepfake:
-            acts.append("SEBI PFUTP Regulations, 2003 (Prohibition of Fraudulent and Unfair Trade Practices) — Deepfake impersonation")
-            evidence.append(f"Synthetic media detected with visual score {media_res.visual_manipulation_score} and audio score {media_res.acoustic_manipulation_score}.")
-            if media_res.filename:
-                target = media_res.filename
+        if media_res:
+            if media_res.is_deepfake:
+                acts.append("SEBI PFUTP Regulations, 2003 (Prohibition of Fraudulent and Unfair Trade Practices) — Deepfake impersonation")
+                evidence.append(f"Synthetic media detected with visual score {media_res.visual_manipulation_score} and audio score {media_res.acoustic_manipulation_score}.")
+                if media_res.filename:
+                    target = media_res.filename
+            if media_res.spoken_advisory_verdict in ["CRITICAL_FRAUD", "SUSPICIOUS"]:
+                acts.append("SEBI (Investment Advisers) Regulations, 2013, Reg 3(1) — Fraudulent spoken voice advisory")
+                if media_res.transcript:
+                    evidence.append(f"Spoken audio transcript captured: \"{media_res.transcript[:120]}\"")
+                evidence.extend(media_res.spoken_advisory_indicators)
 
         if advisory_res:
             if advisory_res.is_suspicious_advisory or advisory_res.composite_risk_score >= self.susp_threshold:
@@ -126,7 +132,11 @@ class AlertEngine(BaseAlertSynthesizer):
 
         scores: List[float] = []
         if media_res:
-            m_score = max(media_res.visual_manipulation_score, media_res.acoustic_manipulation_score)
+            m_score = max(
+                media_res.visual_manipulation_score,
+                media_res.acoustic_manipulation_score if media_res.acoustic_manipulation_score is not None else 0.0,
+                media_res.spoken_advisory_risk if media_res.spoken_advisory_risk is not None else 0.0
+            )
             scores.append(m_score)
             if media_res.is_deepfake:
                 alert = AlertNotification(
@@ -138,6 +148,19 @@ class AlertEngine(BaseAlertSynthesizer):
                     risk_score=m_score,
                     source=media_res.filename or "Media Upload",
                     action_required="Block media dissemination and warn investor audience."
+                )
+                alerts.append(alert)
+                self.recent_alerts.append(alert)
+            elif media_res.spoken_advisory_verdict in ["CRITICAL_FRAUD", "SUSPICIOUS"]:
+                alert = AlertNotification(
+                    alert_id=str(uuid.uuid4()),
+                    timestamp=ts,
+                    severity="CRITICAL" if (media_res.spoken_advisory_risk or 0.0) >= 0.70 else "WARNING",
+                    category="SUSPICIOUS_ADVISORY",
+                    summary=f"Spoken advisory fraud flagged in audio ({media_res.filename or 'Audio Stream'})",
+                    risk_score=media_res.spoken_advisory_risk or 0.70,
+                    source=media_res.filename or "Spoken Audio Broadcast",
+                    action_required="Flagged illegal financial advice/guarantees in spoken audio. Do not transfer funds."
                 )
                 alerts.append(alert)
                 self.recent_alerts.append(alert)

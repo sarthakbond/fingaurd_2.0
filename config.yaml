@@ -47,6 +47,8 @@ audio_detection:
   min_audio_duration_sec: 1.0
   aggregation_peak_weight: 0.70
   aggregation_mean_weight: 0.30
+  enable_transcription: true
+  transcription_model: "openai/whisper-tiny"
   training_dataset: "ASVspoof 2021 PA (balanced subset)"
   limitations:
     - "Trained primarily on ASVspoof 2021 PA physical replay and synthetic speech benchmarks."

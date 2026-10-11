@@ -44,3 +44,10 @@ class MediaScanResponse(BaseModel):
     audio_peak_chunk_score: Optional[float] = None
     audio_mean_chunk_score: Optional[float] = None
     audio_limitations: List[str] = Field(default_factory=list)
+
+    # Captioning & Spoken Content Inspection
+    transcript: Optional[str] = Field(default=None, description="Transcribed audio caption text")
+    transcript_segments: List[Dict[str, Any]] = Field(default_factory=list, description="Timestamped speech subtitle chunks")
+    spoken_advisory_risk: Optional[float] = Field(default=None, description="Risk score if spoken speech violates advisory regulations")
+    spoken_advisory_verdict: Optional[str] = Field(default=None, description="Advisory risk category: SAFE, SUSPICIOUS, or CRITICAL_FRAUD")
+    spoken_advisory_indicators: List[str] = Field(default_factory=list, description="Specific illegal advisory signals identified in spoken speech")

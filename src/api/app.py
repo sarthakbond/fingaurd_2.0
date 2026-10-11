@@ -111,6 +111,11 @@ async def health_check():
                     "device": deepfake_engine.audio_detector.get_device(),
                     "training_basis": "ASVspoof 2021 PA"
                 },
+                "audio_transcriber": {
+                    "model_id": deepfake_engine.transcriber.model_id,
+                    "available": deepfake_engine.transcriber.is_available(),
+                    "device": deepfake_engine.transcriber.get_device()
+                },
                 "video_mode": "baseline_foundation (Phase 2B candidate)",
                 "benchmark_targets": ["FaceForensics++", "DFDC", "ASVspoof 2021 PA"]
             },
@@ -164,9 +169,17 @@ async def scan_media_json(request: MediaScanRequest, db: Session = Depends(get_d
     # Persist JobState and ScanRecord
     risk_val = max(
         res.visual_manipulation_score,
-        res.acoustic_manipulation_score if res.acoustic_manipulation_score is not None else 0.0
+        res.acoustic_manipulation_score if res.acoustic_manipulation_score is not None else 0.0,
+        res.spoken_advisory_risk if res.spoken_advisory_risk is not None else 0.0
     )
-    verdict_str = "CRITICAL_FRAUD" if res.is_deepfake else ("UNVERIFIED" if res.status != "COMPLETED" else "SAFE")
+    if res.is_deepfake or res.spoken_advisory_verdict == "CRITICAL_FRAUD":
+        verdict_str = "CRITICAL_FRAUD"
+    elif res.spoken_advisory_verdict == "SUSPICIOUS":
+        verdict_str = "SUSPICIOUS"
+    elif res.status != "COMPLETED":
+        verdict_str = "UNVERIFIED"
+    else:
+        verdict_str = "SAFE"
 
     job_rec = JobState(job_id=res.job_id, status=res.status, result_payload=res.model_dump_json())
     scan_rec = ScanRecord(
@@ -183,7 +196,7 @@ async def scan_media_json(request: MediaScanRequest, db: Session = Depends(get_d
     db.add(scan_rec)
     db.commit()
 
-    if res.is_deepfake:
+    if res.is_deepfake or (res.spoken_advisory_verdict and res.spoken_advisory_verdict in ["CRITICAL_FRAUD", "SUSPICIOUS"]):
         alert_engine.synthesize(media_res=res)
 
     return res
@@ -215,9 +228,17 @@ async def scan_media_file(
         # Persist JobState and ScanRecord
         risk_val = max(
             res.visual_manipulation_score,
-            res.acoustic_manipulation_score if res.acoustic_manipulation_score is not None else 0.0
+            res.acoustic_manipulation_score if res.acoustic_manipulation_score is not None else 0.0,
+            res.spoken_advisory_risk if res.spoken_advisory_risk is not None else 0.0
         )
-        verdict_str = "CRITICAL_FRAUD" if res.is_deepfake else ("UNVERIFIED" if res.status != "COMPLETED" else "SAFE")
+        if res.is_deepfake or res.spoken_advisory_verdict == "CRITICAL_FRAUD":
+            verdict_str = "CRITICAL_FRAUD"
+        elif res.spoken_advisory_verdict == "SUSPICIOUS":
+            verdict_str = "SUSPICIOUS"
+        elif res.status != "COMPLETED":
+            verdict_str = "UNVERIFIED"
+        else:
+            verdict_str = "SAFE"
 
         job_rec = JobState(job_id=res.job_id, status=res.status, result_payload=res.model_dump_json())
         scan_rec = ScanRecord(
@@ -234,7 +255,7 @@ async def scan_media_file(
         db.add(scan_rec)
         db.commit()
 
-        if res.is_deepfake:
+        if res.is_deepfake or (res.spoken_advisory_verdict and res.spoken_advisory_verdict in ["CRITICAL_FRAUD", "SUSPICIOUS"]):
             alert_engine.synthesize(media_res=res)
 
         return res

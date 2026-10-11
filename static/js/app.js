@@ -57,7 +57,11 @@ function initMediaScan() {
   document.querySelectorAll(".media-preset").forEach(btn => {
     btn.addEventListener("click", () => {
       const type = btn.dataset.preset;
-      if (type === "deepfake_video") {
+      if (type === "deepfake_audio") {
+        urlInput.value = "https://samples.finguard.internal/cloned_deepfake_advisory_audio.wav";
+      } else if (type === "authentic_audio") {
+        urlInput.value = "https://samples.finguard.internal/authentic_market_update.mp3";
+      } else if (type === "deepfake_video") {
         urlInput.value = "https://samples.finguard.internal/manipulated_finfluencer_video.mp4";
       } else {
         urlInput.value = "https://samples.finguard.internal/verified_executive_broadcast.mp4";
@@ -144,24 +148,38 @@ function initMediaScan() {
     const indicatorsEl = document.getElementById("media-indicators-list");
     const benchmarksEl = document.getElementById("media-benchmarks-list");
 
-    if (data.is_deepfake) {
+    // Verdict Badge
+    if (data.status && data.status.startsWith("INFERENCE_")) {
+      badge.className = "verdict-badge verdict-warning";
+      badge.textContent = `UNVERIFIED: ${data.status.replace('_', ' ')}`;
+    } else if (data.is_deepfake || data.spoken_advisory_verdict === "CRITICAL_FRAUD") {
       badge.className = "verdict-badge verdict-critical";
-      badge.textContent = "CRITICAL: MANIPULATED DEEPFAKE";
+      badge.textContent = "CRITICAL: MANIPULATED DEEPFAKE / FRAUD";
+    } else if (data.spoken_advisory_verdict === "SUSPICIOUS") {
+      badge.className = "verdict-badge verdict-warning";
+      badge.textContent = "SUSPICIOUS: ADVISORY FRAUD DETECTED";
     } else {
       badge.className = "verdict-badge verdict-safe";
       badge.textContent = "SAFE: AUTHENTIC MEDIA";
     }
 
-    const vScore = Math.round(data.visual_manipulation_score * 100);
-    const aScore = Math.round(data.acoustic_manipulation_score * 100);
-
+    // Visual Meter
+    const vScore = Math.round((data.visual_manipulation_score || 0) * 100);
     vScoreEl.textContent = `${vScore}%`;
     vBarEl.style.width = `${vScore}%`;
     vBarEl.className = `meter-fill ${vScore > 50 ? 'danger' : 'safe'}`;
 
-    aScoreEl.textContent = `${aScore}%`;
-    aBarEl.style.width = `${aScore}%`;
-    aBarEl.className = `meter-fill ${aScore > 50 ? 'danger' : 'safe'}`;
+    // Acoustic Meter
+    if (data.acoustic_manipulation_score !== null && data.acoustic_manipulation_score !== undefined) {
+      const aScore = Math.round(data.acoustic_manipulation_score * 100);
+      aScoreEl.textContent = `${aScore}%`;
+      aBarEl.style.width = `${aScore}%`;
+      aBarEl.className = `meter-fill ${aScore > 50 ? 'danger' : 'safe'}`;
+    } else {
+      aScoreEl.textContent = "N/A (Unverified)";
+      aBarEl.style.width = "0%";
+      aBarEl.className = "meter-fill";
+    }
 
     // Timeline Scrubber
     timelineEl.innerHTML = "";
@@ -172,6 +190,89 @@ function initMediaScan() {
         div.title = `${chunk.timestamp_start}s - ${chunk.timestamp_end}s: ${(chunk.score * 100).toFixed(0)}% manipulation probability`;
         timelineEl.appendChild(div);
       });
+    }
+
+    // Speech Captioning & Subtitles (Phase 2A)
+    const captionsSection = document.getElementById("media-captions-section");
+    const captionTextEl = document.getElementById("media-caption-text");
+    const speechStatusEl = document.getElementById("media-speech-status");
+    const segsWrapper = document.getElementById("media-caption-segments-wrapper");
+    const segsListEl = document.getElementById("media-caption-segments-list");
+    const spokenBox = document.getElementById("media-spoken-advisory-box");
+    const spokenBadge = document.getElementById("media-spoken-badge");
+    const spokenDesc = document.getElementById("media-spoken-desc");
+    const spokenIndsList = document.getElementById("media-spoken-indicators-list");
+
+    if (data.transcript) {
+      captionsSection.style.display = "block";
+      captionTextEl.textContent = `"${data.transcript}"`;
+
+      const isNoSpeech = data.transcript.includes("(No audible speech detected)") || data.transcript.includes("(No speech recognized)");
+      if (isNoSpeech) {
+        speechStatusEl.className = "caption-status no-speech";
+        speechStatusEl.textContent = "No Audible Speech";
+      } else {
+        speechStatusEl.className = "caption-status";
+        speechStatusEl.textContent = "Spoken Dialogue Transcribed";
+      }
+
+      // Timestamped Subtitle Chunks
+      if (data.transcript_segments && data.transcript_segments.length > 0) {
+        segsWrapper.style.display = "block";
+        segsListEl.innerHTML = "";
+        data.transcript_segments.forEach(seg => {
+          const item = document.createElement("div");
+          item.className = "segment-chip";
+          item.innerHTML = `<span class="segment-time">[${seg.start}s - ${seg.end}s]</span><span class="segment-text">${seg.text}</span>`;
+          segsListEl.appendChild(item);
+        });
+      } else {
+        segsWrapper.style.display = "none";
+      }
+
+      // Spoken Advisory Compliance
+      if (data.spoken_advisory_verdict) {
+        spokenBox.style.display = "block";
+        spokenBox.className = `spoken-advisory-card ${data.spoken_advisory_verdict}`;
+        spokenBadge.textContent = data.spoken_advisory_verdict;
+        spokenBadge.className = `verdict-badge ${data.spoken_advisory_verdict === 'CRITICAL_FRAUD' ? 'verdict-critical' : (data.spoken_advisory_verdict === 'SUSPICIOUS' ? 'verdict-warning' : 'verdict-safe')}`;
+        
+        if (data.spoken_advisory_verdict === "CRITICAL_FRAUD") {
+          spokenDesc.textContent = "⚠️ High-risk illegal advisory violations identified in spoken audio (SEBI Investment Advisers Regulations / PFUTP).";
+        } else if (data.spoken_advisory_verdict === "SUSPICIOUS") {
+          spokenDesc.textContent = "⚠️ Questionable or high-pressure financial claims identified in spoken dialogue.";
+        } else {
+          spokenDesc.textContent = "✅ Spoken dialogue contains no detected illegal advisory claims or guaranteed returns.";
+        }
+
+        spokenIndsList.innerHTML = "";
+        (data.spoken_advisory_indicators || []).forEach(ind => {
+          const li = document.createElement("li");
+          li.textContent = ind;
+          spokenIndsList.appendChild(li);
+        });
+      } else {
+        spokenBox.style.display = "none";
+      }
+    } else {
+      captionsSection.style.display = "none";
+    }
+
+    // Neural Telemetry & Metadata
+    const telemetrySection = document.getElementById("media-neural-telemetry");
+    const telemetryDetails = document.getElementById("media-telemetry-details");
+    if (data.audio_model_identity) {
+      telemetrySection.style.display = "block";
+      telemetryDetails.innerHTML = `
+        <div class="telemetry-tag">Mode: <strong>${data.audio_inference_mode}</strong></div>
+        <div class="telemetry-tag">Audio Model: <strong>${data.audio_model_identity}</strong></div>
+        <div class="telemetry-tag">Duration: <strong>${data.audio_duration_seconds ? data.audio_duration_seconds.toFixed(1) + 's' : 'N/A'}</strong></div>
+        <div class="telemetry-tag">Sliding Chunks: <strong>${data.audio_chunk_count || 0}</strong></div>
+        <div class="telemetry-tag">Peak Chunk Score: <strong>${data.audio_peak_chunk_score !== null && data.audio_peak_chunk_score !== undefined ? (data.audio_peak_chunk_score * 100).toFixed(0) + '%' : 'N/A'}</strong></div>
+        <div class="telemetry-tag">Mean Chunk Score: <strong>${data.audio_mean_chunk_score !== null && data.audio_mean_chunk_score !== undefined ? (data.audio_mean_chunk_score * 100).toFixed(0) + '%' : 'N/A'}</strong></div>
+      `;
+    } else {
+      telemetrySection.style.display = "none";
     }
 
     // Indicators

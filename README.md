@@ -48,6 +48,8 @@ FinGuard 2.0 addresses the three core requirements specified in Problem Statemen
   - **Signal Preprocessing & Chunking**: Automatic mono conversion and 16,000 Hz resampling via [`src/services/audio_preprocessor.py`](file:///e:/fingaurd2.0/src/services/audio_preprocessor.py). Processes audio using configurable 4.0-second sliding windows with 1.0-second overlap, bounded to 180 seconds to prevent resource exhaustion.
   - **Transparent Aggregation**: Returns both peak chunk spoof probability and mean score ($0.70 \times \text{peak} + 0.30 \times \text{mean}$) along with per-chunk timeline segments.
   - **Fail-Safe Integrity**: If PyTorch, model weights, or audio decoding fail, the engine explicitly returns `status="INFERENCE_UNAVAILABLE"` or `"INFERENCE_ERROR"` with `score=None` and `confidence="UNAVAILABLE"`. It **never** silently returns `0.0` or marks failed audio as safe.
+  - **Speech Captioning & Subtitle System**: Integrates `openai/whisper-tiny` accelerated on NVIDIA GPU (`cuda:0`) via [`src/services/audio_transcriber.py`](file:///e:/fingaurd2.0/src/services/audio_transcriber.py) to transcribe speech into timestamped subtitle chunks and full text captions, enabling investigators to verify audio comprehension and speech content directly in the UI.
+  - **Cross-Vector Spoken Advisory Inspection**: Transcribed speech is automatically cross-evaluated against SEBI investor protection regulations (Requirement 1 + Requirement 2), detecting spoken guaranteed return promises (*"paisa double"*, *"100% loss recovery"*) or illegal advisory tips in spoken audio broadcasts.
   - **Training Basis & Documented Limitations**: The candidate model was fine-tuned on a balanced subset of **ASVspoof 2021 PA** (Physical Access / Replay & Synthetic voice attacks). It has not been domain-calibrated for modern commercial zero-shot neural vocoders (e.g. Tortoise, ElevenLabs) or compressed social media audio (e.g. WhatsApp Opus voice notes). All scores represent an initial research baseline.
 - **Video Track (Pending Phase 2B)**: Preserved in Phase 1 baseline foundation mode with candidate benchmark tracking (FaceForensics++ c23/c40 and DFDC). Video neural models remain completely out of scope for Phase 2A.
 
@@ -127,7 +129,10 @@ fingaurd2.0/
 │   ├── services/
 │   │   ├── __init__.py                               # Services barrel export
 │   │   ├── base.py                                   # Abstract engine interfaces
-│   │   ├── deepfake_engine.py                        # Video & audio baseline forensic engine
+│   │   ├── deepfake_engine.py                        # Multi-vector media forensic engine
+│   │   ├── audio_deepfake_detector.py                # Genuine Wav2Vec2 neural audio spoof detector
+│   │   ├── audio_preprocessor.py                     # 16kHz resampling, mono downmixing & chunking
+│   │   ├── audio_transcriber.py                      # Whisper-tiny GPU speech transcription & captions
 │   │   ├── impersonation_engine.py                   # Chat & advisory compliance engine
 │   │   ├── infrastructure_engine.py                  # Domain & APK threat auditor
 │   │   └── alert_engine.py                           # SQLite-persisted alert & SCORES dossier engine
@@ -141,6 +146,7 @@ fingaurd2.0/
 │       └── app.js                                    # Vanilla ES6 reactive client controller
 └── tests/
     ├── test_api.py                                   # API routes & schema tests
+    ├── test_audio_engine.py                          # Neural Wav2Vec2 audio & Whisper caption tests
     ├── test_config.py                                # Configuration & benchmark metadata tests
     ├── test_engines.py                               # Forensic engine logic tests
     └── test_hardening.py                             # SQLite persistence, rate limit, upload & cleanup tests
@@ -154,7 +160,7 @@ fingaurd2.0/
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -v
 ```
-All **26 tests** pass with 0 failures.
+All **39 tests** pass with 0 failures across all 5 test modules.
 
 ### 2. Start Application Server
 ```powershell

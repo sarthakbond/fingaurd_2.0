@@ -156,3 +156,61 @@ def test_api_scan_audio_file_upload_endpoint():
     else:
         assert data["status"].startswith("INFERENCE_")
         assert data["acoustic_manipulation_score"] is None
+
+# ============================================================================
+# PART 4: AUDIO SPEECH CAPTIONING & COMPREHENSION TESTS
+# ============================================================================
+
+def test_audio_transcriber_initialization():
+    """Unit Test: Verifies AudioTranscriber loads Whisper model and verifies device."""
+    from src.services.audio_transcriber import AudioTranscriber
+    transcriber = AudioTranscriber()
+    assert transcriber.model_id == "openai/whisper-tiny"
+    assert transcriber.is_available() is True
+    assert transcriber.get_device() in ["cuda:0", "cpu"]
+
+def test_audio_transcriber_silence_handling():
+    """Unit Test: Verifies silent audio returns (No audible speech detected) safely."""
+    from src.services.audio_transcriber import AudioTranscriber
+    transcriber = AudioTranscriber()
+    silent_wav = create_synthetic_wav(duration_sec=2.0, freq_hz=0.0)
+    res = transcriber.transcribe(silent_wav)
+    assert res["is_speech"] is False
+    assert res["error"] is None
+    assert "(No audible speech detected)" in res["text"] or res["text"] == "(No speech recognized)"
+
+def test_audio_transcriber_corrupt_data():
+    """Unit Test: Verifies corrupt audio input returns graceful error dictionary without crashing."""
+    from src.services.audio_transcriber import AudioTranscriber
+    transcriber = AudioTranscriber()
+    res = transcriber.transcribe(b"INVALID_CORRUPT_BYTES_XYZ")
+    assert res["is_speech"] is False
+    assert res["text"] is None
+    assert res["error"] is not None
+
+def test_deepfake_engine_captions_and_spoken_advisory():
+    """Integration Test: Verifies DeepfakeEngine attaches transcript and spoken advisory metadata."""
+    engine = DeepfakeEngine()
+    test_wav = create_synthetic_wav(duration_sec=3.0, sample_rate=16000)
+    req = MediaScanRequest()
+
+    res = engine.scan_media(req, file_bytes=test_wav, filename="market_speech.wav")
+    assert res.media_type == "audio"
+    # Transcript fields are present
+    assert hasattr(res, "transcript")
+    assert hasattr(res, "transcript_segments")
+    assert hasattr(res, "spoken_advisory_verdict")
+
+def test_api_scan_audio_returns_captions_metadata():
+    """API Test: Verifies POST /api/scan/media-file exposes transcript and spoken advisory keys."""
+    client = TestClient(app)
+    test_wav = create_synthetic_wav(duration_sec=2.0, sample_rate=16000)
+    files = {"file": ("advisory_speech.wav", test_wav, "audio/wav")}
+
+    res = client.post("/api/scan/media-file", files=files)
+    assert res.status_code == 200
+    data = res.json()
+    assert "transcript" in data
+    assert "transcript_segments" in data
+    assert "spoken_advisory_verdict" in data
+

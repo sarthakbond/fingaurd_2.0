@@ -112,8 +112,9 @@
           
           <div class="presets-bar">
             <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center;">Test Presets:</span>
-            <button class="preset-chip media-preset" data-preset="deepfake_video">Synthesized Executive Clip</button>
-            <button class="preset-chip media-preset" data-preset="authentic_video">Verified Authentic Broadcast</button>
+            <button class="preset-chip media-preset" data-preset="deepfake_audio">🎙️ Voice Clone Scam (Audio)</button>
+            <button class="preset-chip media-preset" data-preset="authentic_audio">🎙️ Authentic Voice Note</button>
+            <button class="preset-chip media-preset" data-preset="deepfake_video">🎥 Synthetic Video</button>
           </div>
 
           <div class="drop-zone" id="media-drop-zone">
@@ -167,6 +168,55 @@
               <span class="form-label">Interactive Timeline Risk Scrubber</span>
               <div class="timeline-scrubber" id="media-timeline-scrubber"></div>
               <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem;">Hover over segments to inspect second-by-second manipulation probability.</p>
+            </div>
+
+            <!-- Audio Speech Captioning & Subtitles (Phase 2A Feature) -->
+            <div id="media-captions-section" style="margin-top: 1.25rem; display: none;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span class="form-label" style="display: inline-flex; align-items: center; gap: 0.4rem; margin: 0;">
+                  <span>🎙️</span> Audio Speech Subtitles & Comprehension
+                </span>
+                <span id="media-captions-badge" class="badge-chip">Whisper-Tiny (GPU)</span>
+              </div>
+
+              <!-- Main Caption Box -->
+              <div class="caption-container">
+                <div class="caption-header">
+                  <span class="caption-title">Audio Speech Transcript</span>
+                  <span id="media-speech-status" class="caption-status">Audible Speech Detected</span>
+                </div>
+                <div id="media-caption-text" class="caption-body">
+                  <!-- Transcribed text here -->
+                </div>
+              </div>
+
+              <!-- Timestamped Subtitle Segment Chunks -->
+              <div id="media-caption-segments-wrapper" style="margin-top: 0.75rem;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Timestamped Subtitle Chunks:</span>
+                <div id="media-caption-segments-list" class="caption-segments-grid">
+                  <!-- Timestamped segments here -->
+                </div>
+              </div>
+
+              <!-- Spoken Regulatory Compliance Audit (Requirement 1 + 2 Cross-Vector) -->
+              <div id="media-spoken-advisory-box" class="spoken-advisory-card" style="margin-top: 0.75rem; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <strong id="media-spoken-verdict-title" style="font-size: 0.8rem;">Spoken Advisory Compliance</strong>
+                  <span id="media-spoken-badge" class="verdict-badge" style="font-size: 0.7rem;">SAFE</span>
+                </div>
+                <p id="media-spoken-desc" style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.35rem; margin-bottom: 0.35rem;"></p>
+                <ul id="media-spoken-indicators-list" style="font-size: 0.75rem; color: var(--text-muted); padding-left: 1rem; margin: 0;"></ul>
+              </div>
+            </div>
+
+            <!-- Neural Model Telemetry & Hardware Metadata -->
+            <div id="media-neural-telemetry" style="margin-top: 1.25rem; padding: 0.75rem; background: rgba(0, 240, 255, 0.03); border: 1px solid rgba(0, 240, 255, 0.15); border-radius: var(--radius-sm); font-size: 0.75rem; display: none;">
+              <div style="color: var(--accent-cyan); font-weight: 600; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+                <span>⚡</span> Genuine Neural Inference Telemetry
+              </div>
+              <div id="media-telemetry-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.5rem; color: var(--text-secondary);">
+                <!-- Dynamic telemetry tags -->
+              </div>
             </div>
 
             <div style="margin-top: 1.25rem;">
