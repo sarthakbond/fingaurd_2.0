@@ -1,0 +1,131 @@
+{
+  "dataset_suite_name": "FinGuard 2.0 Lightweight Pellav2 Audio Deepfake Suite",
+  "version": "1.0",
+  "target_directory": "E:\\datasets",
+  "class_balance": {
+    "total_samples": 6000,
+    "total_real": 3000,
+    "total_fake": 3000,
+    "real_fake_ratio": "1.00 : 1.00",
+    "verified_balance_status": "EXACT_1_TO_1"
+  },
+  "sources": [
+    {
+      "source_id": "garystafford",
+      "repository": "garystafford/deepfake-audio-detection",
+      "platform": "Hugging Face Hub",
+      "license": "CC BY 4.0",
+      "format": "Parquet (2 files) / 16kHz Mono FLAC",
+      "measured_download_bytes": 574464278,
+      "measured_download_mb": 547.9,
+      "sample_counts": {
+        "total": 1866,
+        "real": 933,
+        "fake": 933
+      },
+      "generators": {
+        "Amazon Polly (po_)": 209,
+        "ElevenLabs (el_)": 173,
+        "Luvvoice (lv_)": 156,
+        "Speechify (sp_) [UNSEEN TEST TARGET]": 211,
+        "Hume AI (hu_) [UNSEEN TEST TARGET]": 116,
+        "Hexgrad Kokoro (hg_) [UNSEEN TEST TARGET]": 68
+      },
+      "real_sources": "14 distinct YouTube speech sources (yt_0001 to yt_0014)"
+    },
+    {
+      "source_id": "in_the_wild",
+      "repository": "mueller91/In-The-Wild",
+      "platform": "Hugging Face Hub / Zenodo",
+      "license": "CC BY-SA 4.0",
+      "format": "Selective HTTP Range extraction from release_in_the_wild.zip / 16kHz Mono WAV",
+      "estimated_download_mb": 1058.0,
+      "full_archive_bytes": 8161489023,
+      "full_archive_gb": 7.60,
+      "sample_counts": {
+        "total_selected": 4134,
+        "real": 2067,
+        "fake": 2067
+      },
+      "speaker_count": 54,
+      "top_speakers": [
+        "Barack Obama",
+        "Alec Guinness",
+        "Donald Trump",
+        "Bernie Sanders",
+        "Ayn Rand",
+        "Bill Clinton",
+        "Ronald Reagan",
+        "Christopher Hitchens"
+      ]
+    }
+  ],
+  "partitions": {
+    "train": {
+      "total": 3800,
+      "real": 1900,
+      "fake": 1900,
+      "ratio": "50.0% Real / 50.0% Fake",
+      "percentage_of_total": 63.3,
+      "real_sources": {
+        "in_the_wild_group_a": 1327,
+        "garystafford_youtube_group_a": 573
+      },
+      "fake_sources": {
+        "in_the_wild_group_a": 1522,
+        "elevenlabs_train": 123,
+        "amazon_polly_train": 149,
+        "luvvoice_train": 106
+      },
+      "generator_overlap_with_unseen_test": "ZERO (Kokoro, Hume AI, Speechify completely excluded)"
+    },
+    "val": {
+      "total": 1000,
+      "real": 500,
+      "fake": 500,
+      "ratio": "50.0% Real / 50.0% Fake",
+      "percentage_of_total": 16.7,
+      "real_sources": {
+        "in_the_wild_group_b": 340,
+        "garystafford_youtube_group_b": 160
+      },
+      "fake_sources": {
+        "in_the_wild_group_b": 340,
+        "elevenlabs_val": 50,
+        "amazon_polly_val": 60,
+        "luvvoice_val": 50
+      },
+      "control_diagnostic_cases": [
+        "Windows SAPI synthetic advisory test sample",
+        "ElevenLabs Roger financial fraud prompt test sample"
+      ]
+    },
+    "locked_test": {
+      "total": 1200,
+      "real": 600,
+      "fake": 600,
+      "ratio": "50.0% Real / 50.0% Fake",
+      "percentage_of_total": 20.0,
+      "speaker_isolation": "100% disjoint from Train and Val (Group C speakers only)",
+      "real_sources": {
+        "in_the_wild_group_c": 400,
+        "garystafford_youtube_held_out": 200
+      },
+      "fake_sources": {
+        "unseen_hexgrad_kokoro": 68,
+        "unseen_hume_ai": 116,
+        "unseen_speechify": 211,
+        "in_the_wild_group_c": 205
+      },
+      "unseen_generator_percentage_in_fake_test": 65.8,
+      "status": "LOCKED (No threshold tuning, no early stopping, no gradient backprop)"
+    }
+  },
+  "safety_and_rollback": {
+    "original_model_path": "E:\\project models\\pellav2_detector.pt",
+    "backup_model_path": "E:\\project models\\backups\\pellav2_detector_baseline_original.pt",
+    "fine_tuned_output_path": "E:\\project models\\pellav2_finetuned_v1.pt",
+    "fail_safe_behavior": "Explicit UNAVAILABLE / ERROR on corrupt files, never fabricated safe score",
+    "domain_decoupling": "Acoustic detection completely decoupled from Whisper transcription and SEBI text rule verification"
+  }
+}

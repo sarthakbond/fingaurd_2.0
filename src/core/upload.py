@@ -17,9 +17,13 @@ MAGIC_SIGNATURES = {
     "webm": [b"\x1a\x45\xdf\xa3"],
     "avi": [b"RIFF"],  # with 'AVI ' at offset 8
     "mov": [b"ftyp", b"moov", b"mdat", b"wide", b"skip"],
+    "mpg": [b"\x00\x00\x01\xba", b"\x00\x00\x01\xb3"],
     # Audio
     "wav": [b"RIFF"],  # with 'WAVE' at offset 8
     "mp3": [b"ID3", b"\xff\xfb", b"\xff\xf3", b"\xff\xf2", b"\xff\xfa"],
+    "mpeg": [b"ID3", b"\xff\xfb", b"\xff\xf3", b"\xff\xf2", b"\xff\xfa", b"\x00\x00\x01\xba", b"\x00\x00\x01\xb3"],
+    "mpga": [b"ID3", b"\xff\xfb", b"\xff\xf3", b"\xff\xf2", b"\xff\xfa"],
+    "aac": [b"\xff\xf1", b"\xff\xf9", b"ID3"],
     "ogg": [b"OggS"],
     "flac": [b"fLaC"],
     "m4a": [b"ftyp"],

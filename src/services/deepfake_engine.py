@@ -17,8 +17,8 @@ class DeepfakeEngine(BaseDeepfakeDetector):
     """
     Modular Deepfake Video and Audio Forensic Engine.
     Phase 2A Milestone:
-    - Audio track: Genuine pretrained Wav2Vec2 neural inference (Vansh180/deepfake-audio-wav2vec2)
-      with bounded sliding-window chunking and peak+mean score aggregation.
+    - Audio track: Pellav2 (Sadanie/pellav2-audio-deepfake-detector) — XLS-R-300M backbone
+      with learned layer-attention + linear head; sliding-window chunking and peak+mean aggregation.
     - Captioning & Speech-to-Text: Speech transcription via openai/whisper-tiny on GPU
       with cross-vector illegal advisory tip evaluation (Requirement 1 + 2).
     - Video track: Preserved in Phase 1 baseline foundation mode awaiting Phase 2B.
@@ -29,11 +29,12 @@ class DeepfakeEngine(BaseDeepfakeDetector):
         self.mode = self.cfg.get("mode", "baseline_foundation")
         self.vision_threshold = float(config.thresholds.get("vision_fake_threshold", 0.50))
         self.audio_threshold = float(config.thresholds.get("audio_fake_threshold", 0.50))
-        
+
         # Audio Detection & Transcription Services
         self.audio_detector = AudioDeepfakeDetector()
         self.transcriber = AudioTranscriber()
-        logger.info(f"Initialized DeepfakeEngine (mode: '{self.mode}', audio_model: '{self.audio_detector.model_id}', transcriber: '{self.transcriber.model_id}')")
+        audio_model_name = getattr(self.audio_detector, "MODEL_NAME", getattr(self.audio_detector, "model_id", "unknown"))
+        logger.info(f"Initialized DeepfakeEngine (mode: '{self.mode}', audio_model: '{audio_model_name}', transcriber: '{self.transcriber.model_id}')")
 
     def scan_media(
         self,

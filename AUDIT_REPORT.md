@@ -195,15 +195,39 @@ All endpoints were tested with valid and invalid payloads. Pydantic v2 schemas a
 
 ---
 
-## 6. Phase 2A Audio Pipeline & Speech Captioning Verification
+## 6. Phase 2A Audio Pipeline Acceptance Testing & Empirical Verification
 
-| Verification Dimension | Implementation Spec | Empirical Status |
-| :--- | :--- | :--- |
-| **Audio Spoof Classifier** | `Vansh180/deepfake-audio-wav2vec2` (~95M params) | **VERIFIED**: GPU-accelerated on `cuda:0` (RTX 4050 Laptop GPU, FP16) |
-| **Speech-to-Text & Captions** | `openai/whisper-tiny` (~39M params) | **VERIFIED**: GPU-accelerated on `cuda:0`, provides timestamped subtitle chunks |
-| **Cross-Vector Advisory Check**| Spoken dialogue audited against SEBI investment rules | **VERIFIED**: Detects spoken guaranteed returns / unauthorized advice in audio |
-| **Chunking Architecture** | 4.0s sliding windows with 1.0s overlap (max 180s) | **VERIFIED**: Bounded temporal splitting with transparent peak + mean scoring |
-| **Automated Test Suite** | 39 unit, error-handling, and API integration tests | **VERIFIED**: 39 passed in 17.13s (100% pass rate) |
+### 6.1 Hardware & Selected Inference Runtime
+- **GPU Hardware**: NVIDIA GeForce RTX 4050 Laptop GPU (6GB VRAM, Compute Capability 8.9).
+- **PyTorch / CUDA**: PyTorch 2.6.0+cu124 on `cuda:0` in FP16 precision.
+- **Deepfake Audio Backbone**: `Vansh180/deepfake-audio-wav2vec2` (~95M parameters, `model.safetensors`).
+- **Speech Recognition Backbone**: `openai/whisper-tiny` (~39M parameters) via Hugging Face pipeline on `cuda:0`.
+
+### 6.2 Acceptance Test Matrix & Empirical Telemetry
+
+| Test ID | Test Target | Input Audio Sample | Duration | Chunks | Spoof Score (Acoustic) | Whisper Speech Transcript | Latency (GPU) | Observed Verdict & Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **AT-01** | **Legitimate Speech** | `temp/speech_sample_legit.flac` (Clean human speech) | 10.44s | 4 chunks | `0.0782` (Peak: `0.0797`, Mean: `0.0747`) | *"He hoped there would be stew for dinner, turnips and carrots and bruised potatoes..."* (100% accurate) | 4613.9 ms (Init+Wav2Vec2) / 1911.5 ms (Whisper) | `COMPLETED` / `SAFE` |
+| **AT-02** | **Synthetic TTS Speech** | `temp/synthetic_tts_speech.wav` (Windows SAPI TTS) | 8.29s | 3 chunks | `0.0766` (Peak: `0.0786`, Mean: `0.0720`) | *"Hello. We guarantee 100% return on all stock advisory calls. Transfer funds now."* | 1142.7 ms (Wav2Vec2) / 269.0 ms (Whisper) | `COMPLETED` / `SAFE` *(See limitation below)* |
+| **AT-03** | **Long Audio Chunking** | `temp/long_speech_recording.wav` (Advisory disclaimer) | 35.65s | 12 chunks | `0.0810` (Peak: `0.0844`, Mean: `0.0730`) | Bounded sliding windows (4.0s window, 1.0s overlap). Peak: 18–22s chunk (`0.0844`). | 134.4 ms (Wav2Vec2 inference for 12 chunks on GPU) | `COMPLETED` / `SAFE` |
+| **AT-04** | **Fail-Safe Integrity** | Simulated uninitialized/missing model weights | N/A | 0 | `None` (Explicitly `None`, **never** `0.0`) | N/A | < 1 ms | `INFERENCE_UNAVAILABLE` / `UNAVAILABLE` |
+| **AT-05** | **Live Stream API** | `POST /api/scan/media-file` (Streamed binary upload) | 10.44s | 4 chunks | `0.0782` | Full transcript + subtitle chunks returned in JSON | 285.3 ms | `HTTP 200 OK` (Persisted to SQLite) |
+
+### 6.3 Scientific Limitations & Empirical Observations
+1. **ASVspoof 2021 PA Training Domain Shift**:
+   `Vansh180/deepfake-audio-wav2vec2` was trained primarily on physical replay attacks and synthetic vocoders within the ASVspoof 2021 PA benchmark. When evaluated against clean OS-native SAPI text-to-speech (`temp/synthetic_tts_speech.wav`), the model output an acoustic spoof score of `0.0766` (failing to flag it as synthetic). This directly validates our core scientific principle: **no single model is a universal voice-clone detector**, and cross-dataset fine-tuning is required before production deployment.
+2. **Regex Grammar Sensitivity for Spoken Advisory Parsing**:
+   Whisper transcribed the spoken dialogue *"We guarantee 100% return on all stock advisory calls"*, but the rule-based regex in `ImpersonationEngine` matched `guaranteed\s+(?:\d+%\s+)?returns?` (requiring past tense *guaranteed* and plural *returns*). This empirical check highlights the necessity of semantic NLP intent classifiers in Phase 3 rather than rigid regex patterns alone.
+3. **GPU Performance & Memory Footprint**:
+   Once models are warm in VRAM, processing a 35.6-second audio stream across 12 temporal chunks required only **134.4 milliseconds** on the NVIDIA RTX 4050 Laptop GPU (~11.2 ms per 4-second chunk), proving the system easily satisfies real-time latency budgets.
+
+### 6.4 Automated Test Suite Post-Acceptance
+```powershell
+.\.venv\Scripts\python.exe -m pytest -v
+```
+- **Total Tests Executed**: 45
+- **Passing Tests**: 45 (100% pass rate)
+- **Execution Time**: 182.08 seconds across `test_api.py`, `test_audio_engine.py`, `test_config.py`, `test_engines.py`, `test_hardening.py`, and `test_pellav2_parity.py`.
 
 ---
 

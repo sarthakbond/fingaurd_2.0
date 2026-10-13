@@ -120,8 +120,8 @@
           <div class="drop-zone" id="media-drop-zone">
             <div class="drop-zone-icon">📁</div>
             <div class="drop-zone-text">Drag & drop video / audio file here</div>
-            <div class="drop-zone-subtext">Supports MP4, WAV, MP3, MOV (Max 100MB)</div>
-            <input type="file" id="media-file-input" style="display: none;" accept="video/*,audio/*">
+            <div class="drop-zone-subtext">Supports MP3, MPEG, WAV, M4A, FLAC, MP4, MOV (Max 50MB)</div>
+            <input type="file" id="media-file-input" style="display: none;" accept="audio/*,video/*,.mp3,.mpeg,.mpga,.wav,.ogg,.flac,.m4a,.mp4,.mov,.mkv,.webm,.avi">
           </div>
 
           <div style="text-align: center; margin: 1rem 0; color: var(--text-muted); font-size: 0.8rem;">— OR ENTER PUBLIC URL —</div>
@@ -144,6 +144,22 @@
             <div class="verdict-header">
               <span>Overall Verdict:</span>
               <span id="media-verdict-badge" class="verdict-badge">PENDING</span>
+            </div>
+
+            <!-- Dedicated Voice Origin Classifier Card: AI vs Human -->
+            <div class="voice-origin-card" id="media-voice-origin-card" style="margin-bottom: 1.25rem; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03); display: none; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 0.85rem;">
+                <div id="media-voice-origin-icon" style="font-size: 1.8rem; line-height: 1;">🎙️</div>
+                <div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Voice Origin Forensic Analysis</div>
+                  <div id="media-voice-origin-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.15rem;">Analyzing Voice Origin...</div>
+                  <div id="media-voice-origin-desc" style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 0.1rem;">Acoustic waveform analysis in progress</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span id="media-voice-origin-badge" class="verdict-badge verdict-safe" style="font-size: 0.78rem; display: inline-block;">PENDING</span>
+                <div id="media-voice-origin-confidence" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Confidence: --</div>
+              </div>
             </div>
 
             <!-- Visual Score Meter -->

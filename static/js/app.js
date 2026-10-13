@@ -105,6 +105,9 @@ function initMediaScan() {
           body: JSON.stringify({ media_url: url })
         });
         const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || `Scan failed: HTTP ${res.status}`);
+        }
         renderMediaResult(data);
       } catch (err) {
         alert("Scan failed: " + err.message);
@@ -115,13 +118,17 @@ function initMediaScan() {
   }
 
   async function handleMediaFileUpload(file) {
+    if (!file) return;
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("sampling_fps", "2.0");
     formData.append("extract_audio", "true");
 
-    const btn = document.getElementById("media-upload-btn");
-    setLoading(btn, true);
+    const dropText = dropZone ? dropZone.querySelector(".drop-zone-text") : null;
+    const origDropText = dropText ? dropText.textContent : "";
+    if (dropText) dropText.textContent = `Analyzing ${file.name}... (Inference running)`;
+    if (scanBtn) setLoading(scanBtn, true);
 
     try {
       const res = await fetch("/api/scan/media-file", {
@@ -129,11 +136,16 @@ function initMediaScan() {
         body: formData
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || `File upload rejected: HTTP ${res.status}`);
+      }
       renderMediaResult(data);
     } catch (err) {
-      alert("File upload analysis failed: " + err.message);
+      alert("File analysis failed: " + err.message);
     } finally {
-      setLoading(btn, false);
+      if (dropText) dropText.textContent = origDropText;
+      if (scanBtn) setLoading(scanBtn, false);
+      if (fileInput) fileInput.value = "";
     }
   }
 
@@ -161,6 +173,50 @@ function initMediaScan() {
     } else {
       badge.className = "verdict-badge verdict-safe";
       badge.textContent = "SAFE: AUTHENTIC MEDIA";
+    }
+
+    // Dedicated Voice Origin Classifier (AI vs Human)
+    const voiceCard = document.getElementById("media-voice-origin-card");
+    const voiceIcon = document.getElementById("media-voice-origin-icon");
+    const voiceTitle = document.getElementById("media-voice-origin-title");
+    const voiceDesc = document.getElementById("media-voice-origin-desc");
+    const voiceBadge = document.getElementById("media-voice-origin-badge");
+    const voiceConf = document.getElementById("media-voice-origin-confidence");
+
+    if (voiceCard) {
+      if (data.media_type === "audio" || (data.acoustic_manipulation_score !== null && data.acoustic_manipulation_score !== undefined)) {
+        voiceCard.style.display = "flex";
+        const aScore = data.acoustic_manipulation_score;
+        const isUnavailable = (aScore === null || aScore === undefined) || (data.status && data.status.startsWith("INFERENCE_"));
+        const modelId = data.audio_model_identity || "Audio Model";
+
+        if (isUnavailable) {
+          voiceIcon.textContent = "⚠️";
+          voiceTitle.textContent = "Unverified Voice Origin";
+          voiceDesc.textContent = "Acoustic inference unavailable or audio file could not be analyzed.";
+          voiceBadge.className = "verdict-badge verdict-warning";
+          voiceBadge.textContent = "⚠️ UNVERIFIED";
+          voiceConf.textContent = "Confidence: N/A";
+        } else if (aScore >= 0.50 || data.is_deepfake) {
+          const conf = Math.round(aScore * 100);
+          voiceIcon.textContent = "🤖";
+          voiceTitle.textContent = "AI-Generated Voice (Synthetic / Cloned)";
+          voiceDesc.textContent = `Acoustic synthesis artifacts detected (neural vocoder / TTS). Model: ${modelId}`;
+          voiceBadge.className = "verdict-badge verdict-critical";
+          voiceBadge.textContent = "🤖 AI VOICE";
+          voiceConf.textContent = `Probability: ${conf}%`;
+        } else {
+          const authConf = Math.round((1 - aScore) * 100);
+          voiceIcon.textContent = "👤";
+          voiceTitle.textContent = "Authentic Human Voice";
+          voiceDesc.textContent = `Waveform dynamics match natural vocal tract. Evaluated by: ${modelId}`;
+          voiceBadge.className = "verdict-badge verdict-safe";
+          voiceBadge.textContent = "👤 HUMAN";
+          voiceConf.textContent = `Authenticity: ${authConf}%`;
+        }
+      } else {
+        voiceCard.style.display = "none";
+      }
     }
 
     // Visual Meter

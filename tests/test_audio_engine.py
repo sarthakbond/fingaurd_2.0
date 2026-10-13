@@ -126,7 +126,7 @@ def test_deepfake_engine_audio_pipeline_execution():
 
     if res.status == "COMPLETED":
         assert res.audio_inference_mode == "genuine_neural_wav2vec2"
-        assert res.audio_model_identity == "Vansh180/deepfake-audio-wav2vec2"
+        assert res.audio_model_identity in ("Vansh180/deepfake-audio-wav2vec2", "Sadanie/pellav2-audio-deepfake-detector")
         assert res.audio_chunk_count >= 1
         assert res.acoustic_manipulation_score is not None
         assert 0.0 <= res.acoustic_manipulation_score <= 1.0

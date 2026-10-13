@@ -68,6 +68,7 @@ class AudioPreprocessor:
 
         # Method 2: Try standard library wave module for WAV files
         if waveform is None:
+            f = None
             try:
                 import wave
                 import io
@@ -92,10 +93,14 @@ class AudioPreprocessor:
 
                     if channels > 1:
                         waveform = waveform.reshape(-1, channels)
-                if not isinstance(source, bytes):
-                    f.close()
             except Exception as e:
                 raise ValueError(f"Failed to decode audio stream: {e}")
+            finally:
+                if f is not None and not isinstance(source, bytes):
+                    try:
+                        f.close()
+                    except Exception:
+                        pass
 
         if waveform is None or len(waveform) == 0:
             raise ValueError("Decoded audio stream is empty (0 samples).")

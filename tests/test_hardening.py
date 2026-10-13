@@ -94,6 +94,23 @@ def test_media_upload_valid_disk_stream():
     remaining_tmp_count = len(list(temp_dir.glob("*.tmp")))
     assert remaining_tmp_count == initial_tmp_count
 
+def test_media_upload_mpeg_audio():
+    rate_limiter.reset()
+    temp_dir = get_temp_upload_dir()
+    initial_tmp_count = len(list(temp_dir.glob("*.tmp")))
+
+    # Valid ID3 header for MP3/MPEG audio (.mp3.mpeg double extension)
+    valid_mpeg_bytes = b"ID3\x04\x00\x00\x00\x00\x00#TIT2\x00\x00\x00\t\x00\x00\x03Test" + b"\x00" * 1024
+    files = {"file": ("sample_recording.mp3.mpeg", valid_mpeg_bytes, "audio/mpeg")}
+
+    res = client.post("/api/scan/media-file", files=files)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["filename"] == "sample_recording.mp3.mpeg"
+
+    remaining_tmp_count = len(list(temp_dir.glob("*.tmp")))
+    assert remaining_tmp_count == initial_tmp_count
+
 def test_media_upload_invalid_extension():
     rate_limiter.reset()
     temp_dir = get_temp_upload_dir()
